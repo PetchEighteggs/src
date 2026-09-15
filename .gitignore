@@ -6,6 +6,10 @@
 /uploads/
 /caching/
 *.log
+/api/v1/endpoints/dgrbasin/basinmap_cache.json
+/api/v1/endpoints/mapgroundwater/mapservice_cache.json
+/api/v1/endpoints/mapgroundwater_popup/popup_cache_*.json
+/api/v1/endpoints/welldata/welldata_cache.json
 
 # Local configuration and credentials
 /.env

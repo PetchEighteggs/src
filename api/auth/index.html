@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth API Documentation & Playground</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Kanit', 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-main); line-height: 1.6; display: flex; min-height: 100vh; }
+        
+        .sidebar { width: 320px; background-color: var(--card-bg); border-right: 1px solid var(--border); padding: 2rem 1.5rem; position: fixed; height: 100vh; overflow-y: auto; box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02); z-index: 10; }
+        .sidebar h2 { font-size: 1.5rem; margin-bottom: 2rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; font-family: 'Inter', 'Kanit', sans-serif; cursor: pointer; }
+        .endpoint-btn { width: 100%; text-align: left; padding: 0.65rem 1rem; background: none; border: 1px solid transparent; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 1.05rem; color: var(--text-main); transition: all 0.2s ease; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+        .endpoint-btn:hover { background-color: #f1f5f9; }
+        .endpoint-btn.active { background-color: #eef2ff; border-color: #c7d2fe; color: var(--primary); font-weight: 500; }
+        
+        .method-badge { display: inline-block; background-color: var(--primary); color: white; font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 600; font-family: 'Inter', sans-serif; }
+
+        .main-content { flex: 1; margin-left: 320px; padding: 3rem 4rem; max-width: 1200px; }
+        .header { margin-bottom: 2rem; }
+        .header h1 { font-size: 1.75rem; margin-bottom: 0.5rem; }
+        .header p { color: var(--text-muted); font-size: 1.05rem; }
+
+        /* Dashboard Styles */
+        .dashboard { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+        .api-card { border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; transition: all 0.2s ease; cursor: pointer; display: flex; flex-direction: column; gap: 0.5rem; }
+        .api-card:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1); transform: translateY(-2px); }
+        .api-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .api-card-title { font-weight: 600; color: var(--primary); font-size: 1.05rem; }
+        .api-card-desc { color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; }
+        .api-card-path { background: #f1f5f9; padding: 0.4rem 0.6rem; border-radius: 4px; font-family: 'Inter', monospace; font-size: 0.75rem; color: #475569; margin-top: auto; word-break: break-all; }
+
+        .playground { background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .url-bar { display: flex; padding: 1.5rem; border-bottom: 1px solid var(--border); background-color: #f8fafc; align-items: center; gap: 1rem; }
+        .url-input-wrapper { flex: 1; display: flex; align-items: center; background: white; border: 1px solid var(--border); border-radius: 6px; padding: 0 1rem; overflow: hidden; }
+        .url-prefix { color: var(--text-muted); font-weight: 500; font-family: 'Inter', sans-serif; white-space: nowrap; }
+        .url-input { width: 100%; border: none; padding: 0.75rem 0.5rem; font-family: 'Inter', sans-serif; font-size: 0.95rem; outline: none; color: var(--text-main); }
+        
+        .btn { background-color: var(--primary); color: white; border: none; padding: 0.75rem 1.25rem; border-radius: 6px; font-family: 'Kanit', sans-serif; font-weight: 500; cursor: pointer; transition: background-color 0.2s; display: flex; align-items: center; gap: 0.5rem; }
+        .btn:hover { background-color: var(--primary-hover); }
+
+        .body-section { padding: 1.5rem; border-bottom: 1px solid var(--border); }
+        .body-section h3 { font-size: 1rem; margin-bottom: 1rem; color: var(--text-main); }
+        .body-input { width: 100%; height: 150px; padding: 1rem; border: 1px solid var(--border); border-radius: 6px; font-family: 'Consolas', 'Monaco', monospace; font-size: 0.9rem; resize: vertical; outline: none; }
+        .body-input:focus { border-color: var(--primary); }
+
+        .response-container { position: relative; background-color: #1e1e1e; }
+        .response-header { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.5rem; border-bottom: 1px solid #333; background-color: #252526; }
+        .status-badge { font-size: 0.8rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600; font-family: 'Inter', sans-serif; }
+        .status-success { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .status-error { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        
+        .copy-btn { background: rgba(255, 255, 255, 0.1); border: none; color: #d1d5db; padding: 0.3rem 0.75rem; border-radius: 4px; font-size: 0.75rem; cursor: pointer; transition: background 0.2s; font-family: 'Inter', sans-serif; }
+        .copy-btn:hover { background: rgba(255, 255, 255, 0.2); color: white; }
+
+        pre { padding: 1.5rem; color: #d4d4d4; font-family: 'Consolas', 'Monaco', monospace; font-size: 0.9rem; overflow-x: auto; max-height: 500px; margin: 0; white-space: pre-wrap; word-wrap: break-word; }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #333;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            pointer-events: none;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <h2 onclick="goHome()">Auth API</h2>
+        
+        <button class="endpoint-btn" onclick="goHome()" style="margin-bottom: 1rem; border: 1px solid #c7d2fe; color: var(--primary); background: #eef2ff; font-weight: 500; font-size: 1.2rem;">
+            <span>ภาพรวม API</span>
+        </button>
+
+        <div id="sidebarMenu">
+            <button class="endpoint-btn" id="btn-users" onclick="selectEndpoint('users')">
+                <span>Get All Users</span>
+                <span class="method-badge" style="background: #10b981;">GET</span>
+            </button>
+            <button class="endpoint-btn" id="btn-register" onclick="selectEndpoint('register')">
+                <span>Add New User</span>
+                <span class="method-badge">POST</span>
+            </button>
+            <button class="endpoint-btn" id="btn-login" onclick="selectEndpoint('login')">
+                <span>Login & Get OTP</span>
+                <span class="method-badge">POST</span>
+            </button>
+            <button class="endpoint-btn" id="btn-verify" onclick="selectEndpoint('verify')">
+                <span>Verify 2FA OTP</span>
+                <span class="method-badge">POST</span>
+            </button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="header">
+            <h1 id="endpointTitle">ภาพรวม Auth API v1 (Overview)</h1>
+            <p id="endpointDesc">คู่มือจำลองการเรียกใช้งาน API สำหรับระบบ 2FA</p>
+        </div>
+
+        <div class="dashboard" id="dashboardPanel">
+            <h3 style="color: var(--text-main); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">รายการ API ทั้งหมด</h3>
+            <div class="dashboard-grid" id="dashboardGrid">
+                <!-- Cards will be injected here -->
+            </div>
+        </div>
+
+        <div class="playground" id="playgroundPanel" style="display: none;">
+            <div class="url-bar">
+                <span class="method-badge">POST</span>
+                <div class="url-input-wrapper">
+                    <span class="url-prefix" id="urlPrefix"></span>
+                    <input type="text" class="url-input" id="urlInput" readonly>
+                </div>
+                <button class="btn" style="background: var(--card-bg); border: 1px solid var(--border); color: var(--text-main); font-weight: normal; margin-right: 8px;" onclick="copyApiUrl()">
+                    <i class="ph ph-copy" style="margin-right: 4px;"></i>คัดลอก
+                </button>
+                <button class="btn" onclick="sendRequest()">ส่งคำขอ</button>
+            </div>
+
+            <div class="body-section">
+                <h3>JSON Body (แก้ไขได้)</h3>
+                <textarea class="body-input" id="jsonBody"></textarea>
+            </div>
+
+            <div class="response-container">
+                <div class="response-header">
+                    <div style="display:flex; gap:1rem; align-items:center;">
+                        <span id="statusBadge" class="status-badge" style="display: none;"></span>
+                    </div>
+                    <button class="copy-btn" onclick="copyResponse(this)">คัดลอก JSON</button>
+                </div>
+                <pre id="jsonResponse">คลิก "ส่งคำขอ" เพื่อดูข้อมูล Response...</pre>
+            </div>
+        </div>
+    </main>
+
+    <div class="toast" id="toastMsg" role="status" aria-live="polite"></div>
+
+    <script>
+        const baseUrl = window.location.href.replace('index.html', '').replace(/\/$/, '') + '/';
+        document.getElementById('urlPrefix').innerText = baseUrl;
+
+        const apis = {
+            users: {
+                name: 'Get All Users',
+                desc: 'เช็ครายชื่อและอีเมลทั้งหมดที่มีในฐานข้อมูล',
+                file: 'users.php',
+                method: 'GET',
+                defaultBody: ''
+            },
+            register: {
+                name: 'Add New User (Register)',
+                desc: 'เพิ่มอีเมลและรหัสผ่านพนักงานใหม่ลงในระบบ',
+                file: 'register.php',
+                method: 'POST',
+                defaultBody: JSON.stringify({ 
+                    email: "admin2@dgr.go.th", 
+                    password: "password123",
+                    name: "เจ้าหน้าที่ 2"
+                }, null, 4)
+            },
+            login: {
+                name: 'Login & Get OTP',
+                desc: 'ตรวจสอบอีเมล/รหัสผ่าน และส่ง OTP กลับไปทางอีเมล (ถ้าเปิด 2FA)',
+                file: 'login.php',
+                method: 'POST',
+                defaultBody: JSON.stringify({ email: "test@example.com", password: "123456" }, null, 4)
+            },
+            verify: {
+                name: 'Verify 2FA OTP',
+                desc: 'ตรวจสอบรหัส OTP และ Reference Code ที่ส่งไปทางอีเมล',
+                file: 'verify-2fa.php',
+                method: 'POST',
+                defaultBody: JSON.stringify({ reference_code: "REF-XXXXXX", otp_code: "123456" }, null, 4)
+            }
+        };
+
+        let currentEndpoint = null;
+
+        function copyResponse(btn) {
+            const resText = document.getElementById('jsonResponse').innerText;
+            if(resText === 'คลิก "ส่งคำขอ" เพื่อดูข้อมูล Response...' || resText === 'กำลังส่งคำขอ...') return;
+            
+            navigator.clipboard.writeText(resText).then(() => {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = "คัดลอกแล้ว";
+                btn.style.color = "#34d399";
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.color = "#d1d5db";
+                }, 2000);
+            });
+        }
+
+        let toastTimer;
+
+        function showToast(message = 'คัดลอกสำเร็จ') {
+            const toast = document.getElementById('toastMsg');
+            clearTimeout(toastTimer);
+            toast.textContent = message;
+            toast.classList.add('show');
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        function fallbackCopyTextToClipboard(text) {
+            const previousFocus = document.activeElement;
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.top = '0';
+            textArea.style.left = '0';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                showToast(document.execCommand('copy') ? 'คัดลอกสำเร็จ' : 'ไม่สามารถคัดลอก URL ได้ กรุณาลองอีกครั้ง');
+            } catch (error) {
+                showToast('ไม่สามารถคัดลอก URL ได้ กรุณาลองอีกครั้ง');
+            } finally {
+                textArea.remove();
+                if (previousFocus) previousFocus.focus();
+            }
+        }
+
+        function copyApiUrl() {
+            const prefix = document.getElementById('urlPrefix').innerText;
+            const input = document.getElementById('urlInput').value;
+            const fullUrl = prefix + input;
+            
+            if (!navigator.clipboard) {
+                fallbackCopyTextToClipboard(fullUrl);
+                return;
+            }
+            navigator.clipboard.writeText(fullUrl)
+                .then(() => showToast())
+                .catch(() => fallbackCopyTextToClipboard(fullUrl));
+        }
+
+        // Render Dashboard Cards
+        function renderDashboard() {
+            const grid = document.getElementById('dashboardGrid');
+            grid.innerHTML = '';
+            for (const [id, api] of Object.entries(apis)) {
+                const card = document.createElement('div');
+                card.className = 'api-card';
+                card.onclick = () => selectEndpoint(id);
+                card.innerHTML = `
+                    <div class="api-card-header">
+                        <span class="api-card-title">${api.name}</span>
+                        <span class="method-badge" style="${api.method === 'GET' ? 'background-color: #10b981;' : ''}">${api.method || 'POST'}</span>
+                    </div>
+                    <div class="api-card-desc">${api.desc}</div>
+                    <div class="api-card-path">${baseUrl}${api.file}</div>
+                `;
+                grid.appendChild(card);
+            }
+        }
+        renderDashboard();
+
+        function goHome() {
+            document.querySelectorAll('.endpoint-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('endpointTitle').innerText = 'ภาพรวม Auth API v1 (Overview)';
+            document.getElementById('endpointDesc').innerText = 'คู่มือจำลองการเรียกใช้งาน API สำหรับระบบ 2FA';
+            
+            document.getElementById('playgroundPanel').style.display = 'none';
+            document.getElementById('dashboardPanel').style.display = 'block';
+        }
+
+        function selectEndpoint(id) {
+            currentEndpoint = apis[id];
+            
+            document.querySelectorAll('.endpoint-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('btn-' + id).classList.add('active');
+
+            document.getElementById('endpointTitle').innerText = currentEndpoint.name;
+            document.getElementById('endpointDesc').innerText = currentEndpoint.desc;
+            
+            document.getElementById('urlInput').value = currentEndpoint.file;
+            document.getElementById('jsonBody').value = currentEndpoint.defaultBody;
+            
+            // ซ่อนช่อง JSON Body ถ้าเป็น GET Method
+            const bodySection = document.querySelector('.body-section');
+            if(currentEndpoint.method === 'GET') {
+                bodySection.style.display = 'none';
+            } else {
+                bodySection.style.display = 'block';
+            }
+
+            // อัปเดตป้ายบอก Method (POST/GET)
+            const badges = document.querySelectorAll('#playgroundPanel .method-badge');
+            badges.forEach(badge => {
+                badge.innerText = currentEndpoint.method || 'POST';
+                badge.style.backgroundColor = (currentEndpoint.method === 'GET') ? '#10b981' : 'var(--primary)';
+            });
+            
+            document.getElementById('dashboardPanel').style.display = 'none';
+            document.getElementById('playgroundPanel').style.display = 'block';
+            
+            document.getElementById('jsonResponse').innerText = 'คลิก "ส่งคำขอ" เพื่อดูข้อมูล Response...';
+            document.getElementById('statusBadge').style.display = 'none';
+        }
+
+        async function sendRequest() {
+            if (!currentEndpoint) return;
+            
+            const url = baseUrl + currentEndpoint.file;
+            const bodyStr = document.getElementById('jsonBody').value;
+            const resEl = document.getElementById('jsonResponse');
+            const statusBadge = document.getElementById('statusBadge');
+            const method = currentEndpoint.method || 'POST';
+            
+            resEl.innerText = 'กำลังส่งคำขอ...';
+            statusBadge.style.display = 'none';
+
+            try {
+                const options = {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' }
+                };
+
+                // แนบ JSON ไปเฉพาะเมื่อไม่ใช่ GET
+                if(method !== 'GET') {
+                    JSON.parse(bodyStr); // เช็คว่า JSON ถูก format ไหม
+                    options.body = bodyStr;
+                }
+
+                const response = await fetch(url, options);
+                const data = await response.json();
+                
+                resEl.innerText = JSON.stringify(data, null, 4);
+
+                statusBadge.style.display = 'inline-block';
+                statusBadge.innerText = response.status + (response.ok ? ' OK' : ' Error');
+                statusBadge.className = 'status-badge ' + (response.ok ? 'status-success' : 'status-error');
+
+            } catch (error) {
+                resEl.innerText = "Error: " + error.message;
+                statusBadge.style.display = 'inline-block';
+                statusBadge.innerText = 'Failed';
+                statusBadge.className = 'status-badge status-error';
+            }
+        }
+    </script>
+</body>
+</html>

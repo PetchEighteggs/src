@@ -1,0 +1,202 @@
+{
+  "overviewImage": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/dgrbasinresize.jpg",
+  "basins": [
+    {
+      "id": 0,
+      "name": "แอ่งน้ำบาดาล 27 แอ่ง",
+      "nameEn": "27 Groundwater Basins",
+      "downloadUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/shp.zip",
+      "thumbnailUrl": "https://datum.dgr.go.th/mapgroundwater/files/etc/shp.jpg",
+      "type": "all"
+    },
+    {
+      "id": 1,
+      "name": "แอ่งเชียงราย-พะเยา",
+      "nameEn": "Chiang Rai - Phayao Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/1CHIANGRAI_PAYAO_BASIN_th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 2,
+      "name": "แอ่งจะนะ",
+      "nameEn": "Jana Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/2Jana Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 3,
+      "name": "แอ่งจันทบุรี-ตราด",
+      "nameEn": "Chanthaburi - Trat Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/3Chantaburi-Trat Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 4,
+      "name": "แอ่งชลบุรี",
+      "nameEn": "Chonburi Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/4Chonburi Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 5,
+      "name": "แอ่งฝาง",
+      "nameEn": "Fang Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/5Fang Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 6,
+      "name": "แอ่งหาดใหญ่",
+      "nameEn": "Hat Yai Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/6Hat yai Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 7,
+      "name": "แอ่งกาญจนบุรี",
+      "nameEn": "Kanchanaburi Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/7Kanchanaburi Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 8,
+      "name": "แอ่งเลย",
+      "nameEn": "Loei Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/8Loei Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 9,
+      "name": "แอ่งเจ้าพระยาตอนล่าง",
+      "nameEn": "Lower Chaopraya Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/9Lower Chaopraya th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 10,
+      "name": "แอ่งลำปาง",
+      "nameEn": "Lampang Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/10Lampang Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 11,
+      "name": "แอ่งแม่ฮ่องสอน",
+      "nameEn": "Mae Hong Son Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/11Mae Hong Son Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 12,
+      "name": "แอ่งนครราชสีมา-อุบลราชธานี",
+      "nameEn": "Nakhon Ratchasima - Ubon Ratchathani Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/12Nakhon Ratchasima - Ubon Ratchathani Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 13,
+      "name": "แอ่งนครศรีธรรมราช-พัทลุง",
+      "nameEn": "Nakhon Si Thammarat - Phatthalung Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/13Nakhon Si Thammarat - Phatthalung Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 14,
+      "name": "แอ่งน่าน",
+      "nameEn": "Nan Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/14nan.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 15,
+      "name": "แอ่งนราธิวาส",
+      "nameEn": "Narathiwat Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/15Narathiwat Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 16,
+      "name": "แอ่งปัตตานี",
+      "nameEn": "Pattani Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/16Pattani Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 17,
+      "name": "แอ่งเพชรบุรี-ประจวบคีรีขันธ์",
+      "nameEn": "Phetchaburi - Prachuap Khilikhan Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/17Phetchaburi - Prachuap Khilikhan Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 18,
+      "name": "แอ่งเพชรบูรณ์",
+      "nameEn": "Phetchabun Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/18Phetchabun Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 19,
+      "name": "แอ่งปราจีนบุรี-สระแก้ว",
+      "nameEn": "Prachinburi - Srakaeo Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/19Prachinburi - Srakaeo Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 20,
+      "name": "แอ่งแพร่",
+      "nameEn": "Phrae Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/20Phrae Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 21,
+      "name": "แอ่งระนอง-สตูล",
+      "nameEn": "Ranong - Satun Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/21Ranong - Satun Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 22,
+      "name": "แอ่งระยอง",
+      "nameEn": "Rayong Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/22Rayong Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 23,
+      "name": "แอ่งสุราษฎร์ธานี",
+      "nameEn": "Surat Thani Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/23Surat Thani Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 24,
+      "name": "แอ่งตาก",
+      "nameEn": "Tak Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/24Tak Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 25,
+      "name": "แอ่งอุดรธานี-สกลนคร",
+      "nameEn": "Udon Thani - Sakon Nakhon Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/25Udon Thani - Sakon Nakhon Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 26,
+      "name": "แอ่งเจ้าพระยาตอนบน",
+      "nameEn": "Upper Chaopraya Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/26Upper Chaopraya Basin th.jpg",
+      "type": "individual"
+    },
+    {
+      "id": 27,
+      "name": "แอ่งเชียงใหม่-ลำพูน",
+      "nameEn": "Chiang Mai - Lamphun Basin",
+      "imageUrl": "https://datum.dgr.go.th/mapgroundwater/files/dgrbasin/pictures/thai/27Chiang Mai - Lamphun Basin th.jpg",
+      "type": "individual"
+    }
+  ]
+}

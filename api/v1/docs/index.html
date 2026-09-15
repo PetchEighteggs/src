@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Main Website API v1 Documentation & Playground</title>
+	<link
+		href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kanit:wght@300;400;500;600&display=swap"
+		rel="stylesheet">
+	<style>
+		:root {
+			--primary: #4f46e5;
+			--primary-hover: #4338ca;
+			--bg-color: #f8fafc;
+			--card-bg: #ffffff;
+			--text-main: #0f172a;
+			--text-muted: #64748b;
+			--border: #e2e8f0;
+			--success: #10b981;
+			--warning: #f59e0b;
+		}
+
+		* {
+			box-sizing: border-box;
+			margin: 0;
+			padding: 0;
+		}
+
+		body {
+			font-family: 'Kanit', 'Inter', sans-serif;
+			background-color: var(--bg-color);
+			color: var(--text-main);
+			line-height: 1.6;
+			display: flex;
+			min-height: 100vh;
+		}
+
+		/* Sidebar */
+		.sidebar {
+			width: 320px;
+			background-color: var(--card-bg);
+			border-right: 1px solid var(--border);
+			padding: 2rem 1.5rem;
+			position: fixed;
+			height: 100vh;
+			overflow-y: auto;
+			box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02);
+			z-index: 10;
+		}
+
+		.sidebar h2 {
+			font-size: 1.5rem;
+			margin-bottom: 2rem;
+			color: var(--primary);
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			font-family: 'Inter', 'Kanit', sans-serif;
+			cursor: pointer;
+		}
+
+		.sidebar-group-btn {
+			width: 100%;
+			background: none;
+			border: none;
+			text-align: left;
+			font-size: 0.95rem;
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+			color: var(--text-muted);
+			font-weight: 600;
+			padding: 0.75rem 0.5rem;
+			cursor: pointer;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-top: 0.5rem;
+			transition: color 0.2s;
+		}
+
+		.sidebar-group-btn:hover {
+			color: var(--primary);
+		}
+
+		.sidebar-group-btn::after {
+			content: '▼';
+			font-size: 0.7rem;
+			transition: transform 0.3s ease;
+		}
+
+		.sidebar-group-btn.collapsed::after {
+			transform: rotate(-90deg);
+		}
+
+		.sidebar-group-content {
+			list-style: none;
+			max-height: 3000px;
+			overflow: hidden;
+			transition: max-height 0.3s ease;
+		}
+
+		.sidebar-group-content.collapsed {
+			max-height: 0;
+		}
+
+		.endpoint-item {
+			margin-bottom: 0.25rem;
+		}
+
+		.endpoint-btn {
+			width: 100%;
+			text-align: left;
+			padding: 0.65rem 1rem;
+			background: none;
+			border: 1px solid transparent;
+			border-radius: 8px;
+			cursor: pointer;
+			font-family: inherit;
+			font-size: 1.05rem;
+			color: var(--text-main);
+			transition: all 0.2s ease;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		.endpoint-btn:hover {
+			background-color: #f1f5f9;
+		}
+
+		.endpoint-btn.active {
+			background-color: #eef2ff;
+			border-color: #c7d2fe;
+			color: var(--primary);
+			font-weight: 500;
+		}
+
+		.method-badge {
+			display: inline-block;
+			background-color: var(--success);
+			color: white;
+			font-size: 0.65rem;
+			padding: 0.15rem 0.4rem;
+			border-radius: 4px;
+			font-weight: 600;
+			font-family: 'Inter', sans-serif;
+		}
+
+		/* Main Content */
+		.main-content {
+			flex: 1;
+			margin-left: 320px;
+			padding: 3rem 4rem;
+			max-width: 1200px;
+		}
+
+		.header {
+			margin-bottom: 2rem;
+		}
+
+		.header h1 {
+			font-size: 1.75rem;
+			margin-bottom: 0.5rem;
+		}
+
+		.header p {
+			color: var(--text-muted);
+			font-size: 1.05rem;
+		}
+
+		/* Dashboard */
+		.dashboard {
+			background: var(--card-bg);
+			border-radius: 12px;
+			border: 1px solid var(--border);
+			padding: 2rem;
+			margin-bottom: 2rem;
+			box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+		}
+
+		.dashboard-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+			gap: 1.5rem;
+			margin-top: 1.5rem;
+		}
+
+		.api-card {
+			border: 1px solid var(--border);
+			border-radius: 8px;
+			padding: 1.25rem;
+			transition: all 0.2s ease;
+			cursor: pointer;
+			display: flex;
+			flex-direction: column;
+			gap: 0.5rem;
+		}
+
+		.api-card:hover {
+			border-color: var(--primary);
+			box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
+			transform: translateY(-2px);
+		}
+
+		.api-card-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+		}
+
+		.api-card-title {
+			font-weight: 600;
+			color: var(--primary);
+			font-size: 1.05rem;
+		}
+
+		.api-card-desc {
+			color: var(--text-muted);
+			font-size: 0.85rem;
+			line-height: 1.4;
+		}
+
+		.api-card-path {
+			background: #f1f5f9;
+			padding: 0.4rem 0.6rem;
+			border-radius: 4px;
+			font-family: 'Inter', monospace;
+			font-size: 0.75rem;
+			color: #475569;
+			margin-top: auto;
+			word-break: break-all;
+		}
+
+		/* Playground */
+		.playground {
+			background: var(--card-bg);
+			border-radius: 12px;
+			border: 1px solid var(--border);
+			overflow: hidden;
+			box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+			animation: fadeIn 0.4s ease-out;
+			margin-bottom: 2rem;
+			display: none;
+		}
+
+		@keyframes fadeIn {
+			from {
+				opacity: 0;
+				transform: translateY(10px);
+			}
+
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+
+		.url-bar {
+			display: flex;
+			padding: 1.5rem;
+			border-bottom: 1px solid var(--border);
+			background-color: #f8fafc;
+			align-items: center;
+			gap: 1rem;
+		}
+
+		.url-input-wrapper {
+			flex: 1;
+			display: flex;
+			align-items: center;
+			background: white;
+			border: 1px solid var(--border);
+			border-radius: 6px;
+			padding: 0 1rem;
+			overflow: hidden;
+		}
+
+		.url-prefix {
+			color: var(--text-muted);
+			font-weight: 500;
+			font-family: 'Inter', sans-serif;
+			white-space: nowrap;
+		}
+
+		.url-input {
+			width: 100%;
+			border: none;
+			padding: 0.75rem 0.5rem;
+			font-family: 'Inter', sans-serif;
+			font-size: 0.95rem;
+			outline: none;
+			color: var(--text-main);
+		}
+
+		.btn {
+			background-color: var(--primary);
+			color: white;
+			border: none;
+			padding: 0.75rem 1.25rem;
+			border-radius: 6px;
+			font-family: 'Kanit', sans-serif;
+			font-weight: 500;
+			cursor: pointer;
+			transition: background-color 0.2s;
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+		}
+
+		.btn-outline {
+			background-color: transparent;
+			color: var(--primary);
+			border: 1px solid var(--primary);
+		}
+
+		.btn-outline:hover {
+			background-color: #eef2ff;
+		}
+
+		.btn:hover:not(.btn-outline) {
+			background-color: var(--primary-hover);
+		}
+
+		/* Params Section */
+		.params-section {
+			padding: 1.5rem;
+			border-bottom: 1px solid var(--border);
+		}
+
+		.params-section h3 {
+			font-size: 1rem;
+			margin-bottom: 1rem;
+			color: var(--text-main);
+		}
+
+		.param-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+			gap: 1rem;
+		}
+
+		.param-input-group {
+			display: flex;
+			flex-direction: column;
+			gap: 0.4rem;
+		}
+
+		.param-input-group label {
+			font-size: 0.85rem;
+			font-weight: 500;
+			color: var(--text-muted);
+			font-family: 'Inter', sans-serif;
+		}
+
+		.param-input-group input {
+			padding: 0.6rem;
+			border: 1px solid var(--border);
+			border-radius: 4px;
+			font-family: inherit;
+			font-size: 0.9rem;
+			outline: none;
+		}
+
+		.param-input-group input:focus {
+			border-color: var(--primary);
+		}
+
+		/* Response Box */
+		.response-container {
+			position: relative;
+			background-color: #1e1e1e;
+		}
+
+		.response-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			padding: 0.75rem 1.5rem;
+			border-bottom: 1px solid #333;
+			background-color: #252526;
+		}
+
+		.response-meta {
+			display: flex;
+			gap: 1rem;
+			align-items: center;
+		}
+
+		.status-badge {
+			font-size: 0.8rem;
+			padding: 0.2rem 0.5rem;
+			border-radius: 4px;
+			font-weight: 600;
+			font-family: 'Inter', sans-serif;
+		}
+
+		.status-success {
+			background: rgba(16, 185, 129, 0.2);
+			color: #34d399;
+		}
+
+		.status-error {
+			background: rgba(239, 68, 68, 0.2);
+			color: #f87171;
+		}
+
+		.time-label {
+			color: #9ca3af;
+			font-size: 0.8rem;
+			font-family: 'Inter', sans-serif;
+		}
+
+		.copy-btn {
+			background: rgba(255, 255, 255, 0.1);
+			border: none;
+			color: #d1d5db;
+			padding: 0.3rem 0.75rem;
+			border-radius: 4px;
+			font-size: 0.75rem;
+			cursor: pointer;
+			transition: background 0.2s;
+			font-family: 'Inter', sans-serif;
+		}
+
+		.copy-btn:hover {
+			background: rgba(255, 255, 255, 0.2);
+			color: white;
+		}
+
+		pre {
+			padding: 1.5rem;
+			color: #d4d4d4;
+			font-family: 'Consolas', 'Monaco', monospace;
+			font-size: 0.9rem;
+			overflow-x: auto;
+			max-height: 500px;
+			overflow-y: auto;
+			margin: 0;
+			white-space: pre-wrap;
+			word-wrap: break-word;
+		}
+
+		.string {
+			color: #ce9178;
+		}
+
+		.number {
+			color: #b5cea8;
+		}
+
+		.boolean {
+			color: #569cd6;
+		}
+
+		.null {
+			color: #569cd6;
+		}
+
+		.key {
+			color: #9cdcfe;
+		}
+
+		/* Example Usage Section */
+		.example-section {
+			background: var(--card-bg);
+			border-radius: 12px;
+			border: 1px solid var(--border);
+			padding: 1.5rem;
+			display: none;
+		}
+
+		.example-section h3 {
+			margin-bottom: 1rem;
+			font-size: 1.1rem;
+		}
+
+		.example-code {
+			background-color: #1e1e1e;
+			color: #d4d4d4;
+			padding: 1rem;
+			border-radius: 6px;
+			font-family: 'Consolas', 'Monaco', monospace;
+			font-size: 0.85rem;
+			overflow-x: auto;
+			white-space: pre-wrap;
+		}
+
+		.example-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 0.5rem;
+		}
+
+		/* Scrollbar */
+		::-webkit-scrollbar {
+			width: 8px;
+			height: 8px;
+		}
+
+		::-webkit-scrollbar-track {
+			background: transparent;
+		}
+
+		::-webkit-scrollbar-thumb {
+			background: #cbd5e1;
+			border-radius: 4px;
+		}
+
+		::-webkit-scrollbar-thumb:hover {
+			background: #94a3b8;
+		}
+
+		pre::-webkit-scrollbar-thumb {
+			background: #475569;
+		}
+
+		/* Loader */
+		.loader {
+			display: none;
+			width: 16px;
+			height: 16px;
+			border: 2px solid #ffffff;
+			border-bottom-color: transparent;
+			border-radius: 50%;
+			animation: rotation 1s linear infinite;
+		}
+
+		@keyframes rotation {
+			0% {
+				transform: rotate(0deg);
+			}
+
+			100% {
+				transform: rotate(360deg);
+			}
+		}
+
+		.toast {
+			position: fixed;
+			bottom: 2rem;
+			right: 2rem;
+			background: #333;
+			color: white;
+			padding: 0.75rem 1.5rem;
+			border-radius: 6px;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+			transform: translateY(100px);
+			opacity: 0;
+			transition: all 0.3s ease;
+			z-index: 1000;
+		}
+
+		.toast.show {
+			transform: translateY(0);
+			opacity: 1;
+		}
+	</style>
+</head>
+
+<body>
+
+	<aside class="sidebar">
+		<h2 onclick="goHome()">API Endpoints v1</h2>
+		<button class="endpoint-btn" onclick="goHome()"
+			style="margin-bottom: 1rem; border: 1px solid #c7d2fe; color: var(--primary); background: #eef2ff; font-weight: 500; font-size: 1.2rem;">
+			<span>ภาพรวม API</span>
+		</button>
+		<div id="sidebarMenu"></div>
+	</aside>
+
+	<main class="main-content">
+		<div class="header">
+			<h1 id="endpointTitle">ภาพรวม API v1 (Overview)</h1>
+			<p id="endpointDesc">คู่มือจำลองการเรียกใช้งาน API v1 สำหรับเชื่อมต่อหน้าบ้าน (Main Website)</p>
+		</div>
+
+		<div class="dashboard" id="dashboardPanel"></div>
+
+		<div class="playground" id="playgroundPanel">
+			<div class="url-bar">
+				<span class="method-badge" id="methodBadgeLg">GET</span>
+				<div class="url-input-wrapper">
+					<span class="url-prefix" id="urlPrefix"></span>
+					<input type="text" class="url-input" id="urlInput" readonly>
+				</div>
+				<button class="btn btn-outline" onclick="copyApiUrl()"> คัดลอก URL</button>
+				<button class="btn" id="sendBtn" onclick="sendRequest()">
+					<span id="sendText">ส่งคำขอ</span>
+					<span class="loader" id="loader"></span>
+				</button>
+			</div>
+
+			<div class="params-section" id="paramsSection">
+				<h3>พารามิเตอร์ (Query Parameters)</h3>
+				<div class="param-grid" id="paramGrid"></div>
+			</div>
+
+			<div class="params-section" id="bodySection" style="display: none; margin-top: 1.5rem;">
+				<h3>ข้อมูลส่วน Body (JSON Payload)</h3>
+				<textarea id="jsonBodyInput" style="width: 100%; height: 150px; font-family: monospace; padding: 10px; border-radius: 6px; border: 1px solid var(--border); margin-top: 10px; background: #ffffff; color: #333333;" oninput="updateUrl()"></textarea>
+			</div>
+
+			<div class="response-container">
+				<div class="response-header">
+					<div class="response-meta">
+						<span id="statusBadge" class="status-badge" style="display: none;"></span>
+						<span id="responseTime" class="time-label"></span>
+					</div>
+					<button class="copy-btn" onclick="copyResponse()">คัดลอก JSON</button>
+				</div>
+				<pre id="jsonResponse">คลิก "ส่งคำขอ" เพื่อดูข้อมูล Response...</pre>
+			</div>
+		</div>
+
+		<div class="example-section" id="exampleSection">
+			<div class="example-header">
+				<h3>ตัวอย่างการเรียกใช้งาน (cURL / Fetch)</h3>
+				<button class="copy-btn" style="background:#444; color:white;" onclick="copyExample()">คัดลอกโค้ด</button>
+			</div>
+			<div class="example-code" id="exampleCode"></div>
+		</div>
+	</main>
+
+	<div class="toast" id="toastMsg">คัดลอกสำเร็จ</div>
+
+	<script>
+		// Setup Dynamic Base URL just like the other docs
+		const currentPath = window.location.pathname;
+		const basePath = currentPath.indexOf('/api/v1/docs') !== -1
+			? currentPath.substring(0, currentPath.indexOf('/api/v1/docs'))
+			: '';
+		const apiPrefix = basePath + '/api/v1/endpoints/';
+		const baseUrl = window.location.origin + apiPrefix;
+
+		document.getElementById('urlPrefix').innerText = apiPrefix;
+
+		const apiData = [
+			{
+				group: 'Main Components',
+				items: [
+					{ id: 'intro', name: 'Intro', desc: 'ดึงข้อมูล Intro หน้าเว็บไซต์', file: 'intro/', method: 'GET', params: [{ key: 'id', default: '', desc: 'ค้นหาด้วย ID (เว้นว่างเพื่อดูทั้งหมด)' }] },
+					{ id: 'popup', name: 'Popup', desc: 'ดึงข้อมูล Popup หน้าเว็บไซต์', file: 'popup/', method: 'GET', params: [{ key: 'id', default: '', desc: 'ค้นหาด้วย ID (เว้นว่างเพื่อดูทั้งหมด)' }] },
+					{ id: 'hero_banner', name: 'Hero Banners', desc: 'ดึงข้อมูลแบนเนอร์ส่วนหัวของเว็บไซต์ (Hero Slider)', file: 'hero_banner/', method: 'GET', params: [{ key: 'id', default: '', desc: 'ค้นหาด้วย ID (เว้นว่างเพื่อดูทั้งหมด)' }] },
+					{ id: 'home_cards', name: 'Home Cards', desc: 'ดึงข้อมูลการ์ดหน้าหลักสองภาษา พร้อมรูปภาพ สีพื้นหลัง ลิงก์ และตำแหน่งเนื้อหา', file: 'home_cards/', method: 'GET', params: [{ key: 'id', default: '', desc: 'ค้นหาด้วย CardID' }, { key: 'slug', default: '', desc: 'ค้นหาด้วย Slug' }, { key: 'limit', default: '', desc: 'จำกัดจำนวนรายการ (สูงสุด 100)' }] },
+					{ id: 'csr_stats', name: 'สถิติ CSR', desc: 'ดึงข้อมูลสถิติการช่วยเหลือประชาชน (CSR) รวมทั้งส่วนหัวและรายการสถิติ', file: 'csr_stats/', method: 'GET', params: [] },
+					{ id: 'hot_issue', name: 'Hot Issue', desc: 'ดึงข้อมูล Hot Issue', file: 'hot_issue/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }] },
+					{ id: 'org_related', name: 'หน่วยงานที่เกี่ยวข้อง', desc: 'ดึงข้อมูลหน่วยงานที่เกี่ยวข้อง', file: 'org_related/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }] },
+					{ id: 'organization', name: 'หน่วยงานส่วนกลางและภูมิภาค', desc: 'ดึงข้อมูลหน่วยงาน', file: 'organization/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }] },
+					{ id: 'org_directory', name: 'นามสงเคราะห์', desc: 'ดึงข้อมูลนามสงเคราะห์พร้อมชื่อหน่วยงาน', file: 'org_directory/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }, { key: 'deptId', default: '', desc: 'กรองด้วย ID หน่วยงาน' }] }
+				]
+			},
+			{
+				group: 'Search',
+				items: [
+					{ id: 'search', name: 'ค้นหาข้อมูล', desc: 'ค้นหาข้อมูลจาก ข่าวสาร, กิจกรรม, วิดีโอ, ประกอบกิจการน้ำบาดาล และบริการ', file: 'search/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'q', default: '', desc: 'คำค้นหา (Keyword)' }, { key: 'limit', default: '20', desc: 'จำนวนรายการที่ต้องการ' }] }
+				]
+			},
+			{
+				group: 'News & Articles',
+				items: [
+					{ id: 'news', name: 'ข่าวสาร (News Entries)', desc: 'ดึงข้อมูลข่าวสารพร้อมระบบหน้าและหมวดหมู่', file: 'news/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนข่าว' }, { key: 'id', default: '', desc: 'ค้นหาด้วย NewsID' }, { key: 'slug', default: '', desc: 'ค้นหาด้วย Slug' }] },
+					{ id: 'news_category', name: 'หมวดหมู่ข่าว (News Categories)', desc: 'ดึงหมวดหมู่ข่าวทั้งหมด', file: 'news_category/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'id', default: '', desc: 'ค้นหาด้วย CategoryID' }, { key: 'slug', default: '', desc: 'ค้นหาด้วย Slug' }] }
+				]
+			},
+			{
+				group: 'Events (ปฏิทินกิจกรรม)',
+				items: [
+					{ id: 'events', name: 'ปฏิทินกิจกรรม (Events)', desc: 'ดึงข้อมูลกิจกรรมและปฏิทินกิจกรรมของหน่วยงาน', file: 'events/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนรายการ' }, { key: 'page', default: '1', desc: 'หน้า' }, { key: 'id', default: '', desc: 'ค้นหาด้วย EventID' }, { key: 'filter', default: '', desc: 'upcoming / past (เว้นว่าง = ทั้งหมด)' }] }
+				]
+			},
+			{
+				group: 'Executives (ข้อมูลผู้บริหาร)',
+				items: [
+					{ id: 'executives', name: 'ผู้บริหารกรม', desc: 'ผู้บริหารกรมกรมทรัพยากรน้ำบาดาล', file: 'executives/', method: 'GET', params: [] },
+					{ id: 'executives_central', name: 'ผู้บริหารส่วนกลาง', desc: 'ข้อมูลผู้บริหารส่วนกลาง', file: 'executives_central/', method: 'GET', params: [] },
+					{ id: 'executives_regional', name: 'ผู้บริหารส่วนภูมิภาค', desc: 'ข้อมูลผู้บริหารส่วนภูมิภาค', file: 'executives_regional/', method: 'GET', params: [] },
+					{ id: 'executive_directory', name: 'ทำเนียบผู้บริหาร', desc: 'ข้อมูลทำเนียบผู้บริหาร', file: 'executive_directory/', method: 'GET', params: [] },
+					{ id: 'ethics_committee', name: 'คณะกรรมการจริยธรรม', desc: 'ข้อมูลคณะกรรมการจริยธรรมประจำกรม', file: 'ethics_committee/', method: 'GET', params: [] }
+				]
+			},
+			{
+				group: 'Groundwater (ประกอบกิจการน้ำบาดาล)',
+				items: [
+					{ id: 'groundwater', name: 'ข้อมูลประกอบกิจการน้ำบาดาล', desc: 'ดึงข้อมูลประกอบกิจการน้ำบาดาล ไฟล์แนบ และหมวดหมู่', file: 'groundwater/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }, { key: 'group_id', default: '', desc: 'กรองด้วย ID หมวดหมู่' }, { key: 'subgroup_id', default: '', desc: 'กรองด้วย ID หมวดหมู่ย่อย' }] }
+				]
+			},
+			{
+				group: 'แผนที่และข้อมูลบ่อน้ำบาดาล',
+				items: [
+					{ id: 'mapgroundwater', name: 'แผนที่น้ำบาดาล', desc: 'ดึงข้อมูลพิกัดแผนที่น้ำบาดาล (SVG Paths)', file: 'mapgroundwater/', method: 'GET', params: [] },
+					{ id: 'mapgroundwater_popup', name: 'ข้อมูลแผนที่รายจังหวัด (Popup)', desc: 'ดึงข้อมูลลิงก์ดาวน์โหลดแผนที่และ Shapefile ของแต่ละจังหวัด', file: 'mapgroundwater_popup/', method: 'GET', params: [{ key: 'code', default: '30', desc: 'รหัสจังหวัด เช่น 30 (นครราชสีมา)' }] },
+					{ id: 'dgrbasin', name: 'แผนที่แอ่งน้ำบาดาล', desc: 'ดึงข้อมูลแผนที่แอ่งน้ำบาดาลทั้ง 27 แอ่ง', file: 'dgrbasin/', method: 'GET', params: [] },
+					{ id: 'welldata', name: 'ข้อมูลบ่อน้ำบาดาล', desc: 'ดึงข้อมูลสถิติจากระบบบริการข้อมูลบ่อน้ำบาดาล', file: 'welldata/', method: 'GET', params: [] }
+				]
+			},
+			{
+				group: 'บริการ (Services)',
+				items: [
+					{ id: 'situation', name: 'ข้อมูลสถานการณ์น้ำบาดาล', desc: 'ดึงข้อมูลสถานการณ์น้ำบาดาล ไฟล์แนบ และหมวดหมู่', file: 'situation/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }, { key: 'group_id', default: '', desc: 'กรองด้วย ID หมวดหมู่' }] },
+					{ id: 'reports', name: 'รายงานเกี่ยวกับน้ำบาดาล', desc: 'ดึงข้อมูลรายงานเกี่ยวกับน้ำบาดาล ไฟล์แนบ และหมวดหมู่', file: 'reports/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }, { key: 'group_id', default: '', desc: 'กรองด้วย ID หมวดหมู่' }] },
+					{ id: 'mou', name: 'บันทึกความเข้าใจ', desc: 'ดึงข้อมูลบันทึกความเข้าใจ ไฟล์แนบ และหมวดหมู่', file: 'mou/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }, { key: 'group_id', default: '', desc: 'กรองด้วย ID หมวดหมู่' }] },
+					{ id: 'laws', name: 'กฎหมายน้ำบาดาล', desc: 'ดึงข้อมูลกฎหมายน้ำบาดาล ไฟล์แนบ และหมวดหมู่', file: 'laws/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }, { key: 'group_id', default: '', desc: 'กรองด้วย ID หมวดหมู่' }] },
+					{ id: 'downloads', name: 'สื่อดาวน์โหลด', desc: 'ดึงข้อมูลสื่อดาวน์โหลด ไฟล์แนบ และหมวดหมู่', file: 'downloads/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }, { key: 'group_id', default: '', desc: 'กรองด้วย ID หมวดหมู่' }] },
+					{ id: 'infographic', name: 'สื่อประชาสัมพันธ์', desc: 'ดึงข้อมูลสื่อประชาสัมพันธ์ รูปภาพ และหมวดหมู่', file: 'infographic/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }, { key: 'group_id', default: '', desc: 'กรองด้วย ID หมวดหมู่' }] },
+					{ id: 'standards', name: 'มาตรฐานและราคากลางการเจาะน้ำบาดาล', desc: 'ดึงข้อมูลมาตรฐานและราคากลางการเจาะน้ำบาดาล ไฟล์แนบ และหมวดหมู่', file: 'standards/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }, { key: 'group_id', default: '', desc: 'กรองด้วย ID หมวดหมู่' }] },
+					{ id: 'manuals', name: 'คู่มือสำหรับประชาชน', desc: 'ดึงข้อมูลคู่มือสำหรับประชาชน ไฟล์แนบ และหมวดหมู่', file: 'manuals/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }, { key: 'group_id', default: '', desc: 'กรองด้วย ID หมวดหมู่' }] },
+					{ id: 'videos', name: 'วีดิทัศน์', desc: 'ดึงข้อมูลวีดิทัศน์', file: 'videos/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }] },
+					{ id: 'videos_groups', name: 'หมวดหมู่วีดิทัศน์', desc: 'ดึงข้อมูลหมวดหมู่วีดิทัศน์', file: 'videos_groups/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }] },
+                    { id: 'weblinks', name: 'เว็บลิ้งค์', desc: 'ดึงเว็บลิ้งค์ที่เปิดใช้งานและอยู่ในช่วงเผยแพร่ พร้อม description, contentType (detail/url), detail, url และ cover; รายการคืนค่า array, ระบุ id คืนค่า object หรือ null เมื่อไม่พบ', file: 'weblinks/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }, { key: 'group_id', default: '', desc: 'กรองด้วย ID หมวดหมู่' }] },
+                    { id: 'weblinks_groups', name: 'หมวดหมู่เว็บลิ้งค์', desc: 'ดึงหมวดหมู่เว็บลิ้งค์ที่เปิดใช้งาน คืนค่า id และ name; ระบุ id คืนค่า object หรือ null เมื่อไม่พบ', file: 'weblinks_groups/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID หมวดหมู่' }] },
+					{ id: 'qa', name: 'ถาม-ตอบ (Q&A)', desc: 'ดึงข้อมูลถาม-ตอบ', file: 'qa/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }] },
+					{ id: 'qa_groups', name: 'หมวดหมู่ถาม-ตอบ', desc: 'ดึงข้อมูลหมวดหมู่ถาม-ตอบ', file: 'qa_groups/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }] },
+					{ id: 'faq', name: 'คำถามที่พบบ่อย (FAQ)', desc: 'ดึงข้อมูลคำถามที่พบบ่อย', file: 'faq/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }] },
+					{ id: 'faq_groups', name: 'หมวดหมู่คำถามที่พบบ่อย', desc: 'ดึงข้อมูลหมวดหมู่คำถามที่พบบ่อย', file: 'faq_groups/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }] }
+				]
+			},
+
+			{
+				group: 'ผู้บริหาร CIO (CIO Executives)',
+				items: [
+					{ id: 'cio_executives', name: 'ข้อมูลผู้บริหาร CIO', desc: 'ดึงข้อมูลผู้บริหาร CIO', file: 'cio_executives/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }] },
+					{ id: 'cio_news', name: 'ข้อมูลข่าวสาร CIO', desc: 'ดึงข้อมูลข่าวสาร CIO', file: 'cio_news/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }] },
+					{ id: 'cio_documents', name: 'เอกสารดาวน์โหลด CIO', desc: 'ดึงข้อมูลเอกสารดาวน์โหลด CIO', file: 'cio_documents/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }] },
+					{ id: 'cio_events', name: 'ปฏิทินกิจกรรม CIO', desc: 'ดึงข้อมูลปฏิทินกิจกรรม CIO', file: 'cio_events/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }] }
+				]
+			},
+			{
+				group: 'ข้อมูลองค์กร (Organization Documents)',
+				items: [
+					{ id: 'history', name: 'ประวัติความเป็นมา', desc: 'ดึงข้อมูลประวัติความเป็นมา', file: 'org_pages/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'slug', default: 'history', desc: 'Slug หน้าเพจ' }] },
+					{ id: 'vision', name: 'วิสัยทัศน์/พันธกิจ', desc: 'ดึงข้อมูลวิสัยทัศน์และพันธกิจ', file: 'org_pages/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'slug', default: 'vision', desc: 'Slug หน้าเพจ' }] },
+					{ id: 'org_chart', name: 'โครงสร้างองค์กร', desc: 'ดึงข้อมูลโครงสร้างองค์กร', file: 'org_pages/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'slug', default: 'org_chart', desc: 'Slug หน้าเพจ' }] },
+					{ id: 'delegation', name: 'คำสั่งมอบอำนาจ', desc: 'ดึงข้อมูลคำสั่งมอบอำนาจ', file: 'org_pages/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'slug', default: 'delegation', desc: 'Slug หน้าเพจ' }] },
+					{ id: 'authority', name: 'อำนาจหน้าที่', desc: 'ดึงข้อมูลอำนาจหน้าที่', file: 'org_pages/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'slug', default: 'authority', desc: 'Slug หน้าเพจ' }] },
+					{ id: 'symbol', name: 'ตราสัญลักษณ์ ความหมาย', desc: 'ดึงข้อมูลตราสัญลักษณ์', file: 'org_pages/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'slug', default: 'symbol', desc: 'Slug หน้าเพจ' }] },
+					{ id: 'website_security_policy', name: 'นโยบายรักษาความมั่นคงปลอดภัยเว็บไซต์', desc: 'ดึงข้อมูลนโยบายรักษาความมั่นคงปลอดภัยเว็บไซต์', file: 'org_pages/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'slug', default: 'website_security_policy', desc: 'Slug หน้าเพจ' }] },
+					{ id: 'it_security_policy', name: 'นโยบายรักษาความมั่นคงปลอดภัยด้านสารสนเทศ', desc: 'ดึงข้อมูลนโยบายรักษาความมั่นคงปลอดภัยด้านสารสนเทศ', file: 'org_pages/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'slug', default: 'it_security_policy', desc: 'Slug หน้าเพจ' }] },
+					{ id: 'website_disclaimer_policy', name: 'นโยบายเว็บไซต์และการปฎิเสธความรับผิดชอบ', desc: 'ดึงข้อมูลนโยบายเว็บไซต์', file: 'org_pages/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'slug', default: 'website_disclaimer_policy', desc: 'Slug หน้าเพจ' }] },
+					{ id: 'cookie_policy', name: 'นโยบายคุกกี้', desc: 'ดึงข้อมูลนโยบายคุกกี้', file: 'org_pages/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'slug', default: 'cookie_policy', desc: 'Slug หน้าเพจ' }] },
+					{ id: 'privacy_policy', name: 'นโยบายการคุ้มครองข้อมูลส่วนบุคคล', desc: 'ดึงข้อมูลนโยบายการคุ้มครองข้อมูลส่วนบุคคล', file: 'org_pages/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'slug', default: 'privacy_policy', desc: 'Slug หน้าเพจ' }] },
+					{ id: 'pdpa_request', name: 'แจ้งข้อเปลี่ยน/แก้ไข/ลบ ข้อมูลส่วนบุคคล', desc: 'ดึงข้อมูลแจ้งแก้ไข PDPA', file: 'org_pages/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'slug', default: 'pdpa_request', desc: 'Slug หน้าเพจ' }] },
+					{ id: 'policy', name: 'นโยบายและยุทธศาสตร์', desc: 'ดึงข้อมูลนโยบายและยุทธศาสตร์ ไฟล์แนบ และหมวดหมู่', file: 'policy/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }, { key: 'group_id', default: '', desc: 'กรองด้วย ID หมวดหมู่' }] },
+					{ id: 'digital_plan', name: 'แผนปฏิบัติการดิจิทัล', desc: 'ดึงข้อมูลแผนปฏิบัติการดิจิทัล ไฟล์แนบ และหมวดหมู่', file: 'digital_plan/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }, { key: 'group_id', default: '', desc: 'กรองด้วย ID หมวดหมู่' }] },
+					{ id: 'annual_plan', name: 'แผนปฏิบัติราชการประจำปี', desc: 'ดึงข้อมูลแผนปฏิบัติราชการประจำปี ไฟล์แนบ และหมวดหมู่', file: 'annual_plan/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }, { key: 'group_id', default: '', desc: 'กรองด้วย ID หมวดหมู่' }] },
+					{ id: 'budget', name: 'งบประมาณรายจ่ายประจำปี', desc: 'ดึงข้อมูลงบประมาณรายจ่ายประจำปี ไฟล์แนบ และหมวดหมู่', file: 'budget/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }, { key: 'group_id', default: '', desc: 'กรองด้วย ID หมวดหมู่' }] },
+					{ id: 'report', name: 'คำรับรอง/รายงานผล', desc: 'ดึงข้อมูลคำรับรอง/รายงานผล ไฟล์แนบ และหมวดหมู่', file: 'report/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '10', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }, { key: 'group_id', default: '', desc: 'กรองด้วย ID หมวดหมู่' }] },
+					{ id: 'departments', name: 'หน้าที่ความรับผิดชอบ', desc: 'ดึงข้อมูลหน้าที่ความรับผิดชอบ', file: 'departments/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '100', desc: 'จำนวนจำกัด' }, { key: 'id', default: '', desc: 'ค้นหาด้วย ID' }, { key: 'slug', default: '', desc: 'ค้นหาด้วย Slug' }] },
+					{ id: 'org_positions', name: 'โครงสร้างและตำแหน่งข้าราชการ', desc: 'ดึงข้อมูลโครงสร้างและตำแหน่งข้าราชการ', file: 'org_positions/', method: 'GET', params: [{ key: 'lang', default: 'th', desc: 'ภาษา (th/en)' }, { key: 'limit', default: '100', desc: 'จำนวนจำกัด' }, { key: 'dept_id', default: '', desc: 'กรองด้วย ID หน่วยงาน' }] }
+				]
+			},
+			{
+				group: 'แบบสอบถาม (Survey)',
+				items: [
+					{ id: 'survey', name: 'ดึงแบบสอบถาม', desc: 'ดึงโครงสร้างแบบสอบถาม คำถาม และตัวเลือก', file: 'survey/', method: 'GET', params: [{ key: 'form_id', default: '1', desc: 'รหัสฟอร์ม' }] },
+					{ id: 'survey_submit', name: 'ส่งแบบสอบถาม', desc: 'บันทึกคำตอบแบบสอบถาม (POST JSON Payload)', file: 'survey_submit/', method: 'POST', params: [], defaultBody: "{\n  \"form_id\": 1,\n  \"answers\": [\n    {\n      \"question_id\": 1,\n      \"option_ids\": [31],\n      \"other_text\": \"กระทรวงพลังงาน\"\n    },\n    {\n      \"question_id\": 3,\n      \"option_ids\": [32]\n    },\n    {\n      \"question_id\": 4,\n      \"option_ids\": [33]\n    },\n    {\n      \"question_id\": 5,\n      \"option_ids\": [32]\n    },\n    {\n      \"question_id\": 6,\n      \"option_ids\": [34]\n    },\n    {\n      \"question_id\": 7,\n      \"answer_text\": \"เมนูค้นหาข้อมูล\"\n    },\n    {\n      \"question_id\": 8,\n      \"answer_text\": \"โหลดหน้าเว็บช้ามากในบางครั้ง\"\n    },\n    {\n      \"question_id\": 9,\n      \"answer_text\": \"อยากให้มีโหมดกลางคืน (Dark Mode)\"\n    }\n  ]\n}" },
+					{ id: 'survey_responses', name: 'ดึงคำตอบทั้งหมด', desc: 'ดึงข้อมูลผู้ตอบทั้งหมดของฟอร์ม (เรียงตามคนตอบ)', file: 'survey_responses/', method: 'GET', params: [{ key: 'form_id', default: '1', desc: 'รหัสฟอร์ม' }, { key: 'limit', default: '100', desc: 'จำนวนที่ต้องการแสดง' }] }
+				]
+			}
+		];
+
+		let currentEndpoint = null;
+		let currentResponseRaw = '';
+
+		const menuContainer = document.getElementById('sidebarMenu');
+		const dashboardPanel = document.getElementById('dashboardPanel');
+
+		apiData.forEach((group, gIndex) => {
+			const groupBtn = document.createElement('button');
+			groupBtn.className = 'sidebar-group-btn collapsed';
+			groupBtn.innerText = group.group;
+
+			const ul = document.createElement('ul');
+			ul.className = 'sidebar-group-content collapsed';
+			ul.id = `group-${gIndex}`;
+
+			const dashGroupHeader = document.createElement('h3');
+			dashGroupHeader.innerText = group.group;
+			dashGroupHeader.style.marginTop = gIndex === 0 ? '0' : '2rem';
+			dashGroupHeader.style.borderBottom = '1px solid var(--border)';
+			dashGroupHeader.style.paddingBottom = '0.5rem';
+			dashGroupHeader.style.color = 'var(--text-main)';
+			dashboardPanel.appendChild(dashGroupHeader);
+
+			const dashGrid = document.createElement('div');
+			dashGrid.className = 'dashboard-grid';
+
+			groupBtn.onclick = () => {
+				groupBtn.classList.toggle('collapsed');
+				ul.classList.toggle('collapsed');
+			};
+
+			group.items.forEach(item => {
+				const li = document.createElement('li');
+				li.className = 'endpoint-item';
+
+				li.innerHTML = `
+                    <button class="endpoint-btn" id="btn-${item.id}" onclick="selectEndpoint('${group.group}', '${item.id}')">
+                        <span>${item.name}</span>
+                        <span class="method-badge">${item.method}</span>
+                    </button>
+                `;
+				ul.appendChild(li);
+
+				const card = document.createElement('div');
+				card.className = 'api-card';
+				card.onclick = () => selectEndpoint(group.group, item.id);
+				card.innerHTML = `
+                    <div class="api-card-header">
+                        <span class="api-card-title">${item.name}</span>
+                        <span class="method-badge">${item.method}</span>
+                    </div>
+                    <div class="api-card-desc">${item.desc}</div>
+                    <div class="api-card-path">${apiPrefix}${item.file}</div>
+                `;
+				dashGrid.appendChild(card);
+			});
+
+			menuContainer.appendChild(groupBtn);
+			menuContainer.appendChild(ul);
+			dashboardPanel.appendChild(dashGrid);
+		});
+
+		function goHome() {
+			currentEndpoint = null;
+			document.querySelectorAll('.endpoint-btn').forEach(b => b.classList.remove('active'));
+			document.getElementById('dashboardPanel').style.display = 'block';
+			document.getElementById('playgroundPanel').style.display = 'none';
+			document.getElementById('exampleSection').style.display = 'none';
+			document.getElementById('endpointTitle').innerText = 'ภาพรวม API v1 (Overview)';
+			document.getElementById('endpointDesc').innerText = 'คู่มือจำลองการเรียกใช้งาน API v1 สำหรับเชื่อมต่อหน้าบ้าน (Main Website)';
+		}
+
+		function selectEndpoint(groupName, id) {
+			for (let g of apiData) {
+				const found = g.items.find(i => i.id === id);
+				if (found) { currentEndpoint = found; break; }
+			}
+			if (!currentEndpoint) return;
+
+			document.querySelectorAll('.endpoint-btn').forEach(b => b.classList.remove('active'));
+			document.getElementById(`btn-${id}`).classList.add('active');
+
+			document.getElementById('dashboardPanel').style.display = 'none';
+			document.getElementById('playgroundPanel').style.display = 'block';
+			document.getElementById('exampleSection').style.display = 'block';
+			document.getElementById('endpointTitle').innerText = currentEndpoint.name;
+			document.getElementById('endpointDesc').innerText = currentEndpoint.desc;
+
+			document.getElementById('methodBadgeLg').innerText = currentEndpoint.method;
+			document.getElementById('methodBadgeLg').style.backgroundColor = currentEndpoint.method === 'POST' ? '#10b981' : '#4f46e5';
+
+			if (currentEndpoint.method === 'POST') {
+				document.getElementById('bodySection').style.display = 'block';
+				document.getElementById('jsonBodyInput').value = currentEndpoint.defaultBody || '{}';
+			} else {
+				document.getElementById('bodySection').style.display = 'none';
+			}
+
+			const paramGrid = document.getElementById('paramGrid');
+			paramGrid.innerHTML = '';
+
+			currentEndpoint.params.forEach(p => {
+				const div = document.createElement('div');
+				div.className = 'param-input-group';
+				div.innerHTML = `
+                    <label>${p.key} ${p.desc ? `<span style="font-weight: normal; font-size: 0.75rem;">(${p.desc})</span>` : ''}</label>
+                    <input type="text" id="param-${p.key}" value="${p.default}" autocomplete="off" oninput="updateUrl()">
+                `;
+				paramGrid.appendChild(div);
+			});
+
+			document.getElementById('jsonResponse').innerHTML = 'คลิก "ส่งคำขอ" เพื่อดูข้อมูล Response ที่นี่';
+			document.getElementById('statusBadge').style.display = 'none';
+			document.getElementById('responseTime').innerText = '';
+
+			updateUrl();
+			if (currentEndpoint.method !== 'POST') {
+				sendRequest(); // Auto send only for GET
+			}
+		}
+
+		function updateUrl() {
+			if (!currentEndpoint) return;
+			let queryParams = [];
+
+			currentEndpoint.params.forEach(p => {
+				const val = document.getElementById(`param-${p.key}`).value;
+				if (val !== '') queryParams.push(`${p.key}=${encodeURIComponent(val)}`);
+			});
+
+			const queryString = queryParams.length > 0 ? '?' + queryParams.join('&') : '';
+			document.getElementById('urlInput').value = `${currentEndpoint.file}${queryString}`;
+
+			const fullUrl = baseUrl + document.getElementById('urlInput').value;
+			let code = '';
+			if (currentEndpoint.method === 'POST') {
+				const bodyVal = document.getElementById('jsonBodyInput').value;
+				code = `fetch('${fullUrl}', {\n  method: 'POST',\n  headers: {\n    'Content-Type': 'application/json'\n  },\n  body: JSON.stringify(${bodyVal})\n})\n  .then(response => response.json())\n  .then(data => console.log(data));`;
+			} else {
+				code = `fetch('${fullUrl}')\n  .then(response => response.json())\n  .then(data => console.log(data));`;
+			}
+			document.getElementById('exampleCode').innerText = code;
+
+			if (window.autoFetchTimeout) clearTimeout(window.autoFetchTimeout);
+			if (currentEndpoint.method !== 'POST') {
+				window.autoFetchTimeout = setTimeout(() => { sendRequest(); }, 500);
+			}
+		}
+
+		async function sendRequest() {
+			if (!currentEndpoint) return;
+			const btn = document.getElementById('sendBtn');
+			const loader = document.getElementById('loader');
+			const resBox = document.getElementById('jsonResponse');
+			const statusBadge = document.getElementById('statusBadge');
+			const timeLabel = document.getElementById('responseTime');
+			const sendText = document.getElementById('sendText');
+
+			const fullUrl = baseUrl + document.getElementById('urlInput').value;
+
+			btn.disabled = true;
+			sendText.style.display = 'none';
+			loader.style.display = 'block';
+			resBox.style.opacity = '0.5';
+
+			const startTime = performance.now();
+
+			try {
+				// Timeout after 30 seconds to prevent infinite loading
+				const controller = new AbortController();
+				const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+				const fetchOptions = { signal: controller.signal };
+				if (currentEndpoint.method === 'POST') {
+					fetchOptions.method = 'POST';
+					fetchOptions.headers = { 'Content-Type': 'application/json' };
+					fetchOptions.body = document.getElementById('jsonBodyInput').value;
+				}
+
+				const response = await fetch(fullUrl, fetchOptions);
+				clearTimeout(timeoutId);
+				const endTime = performance.now();
+				const timeDiff = Math.round(endTime - startTime);
+
+				const isJson = response.headers.get('content-type')?.includes('application/json');
+
+				statusBadge.style.display = 'inline-block';
+				statusBadge.innerText = `${response.status} ${response.statusText}`;
+				statusBadge.className = `status-badge ${response.ok ? 'status-success' : 'status-error'}`;
+				timeLabel.innerText = `${timeDiff} ms`;
+
+				if (isJson) {
+					const data = await response.json();
+					currentResponseRaw = JSON.stringify(data, null, 2);
+					resBox.innerHTML = syntaxHighlight(currentResponseRaw);
+
+                    if (currentEndpoint.method === 'POST' && response.ok) {
+                        showToast('✅ ส่งคำขอสำเร็จ!');
+                    }
+				} else {
+					const text = await response.text();
+					currentResponseRaw = text;
+					resBox.innerText = text;
+				}
+			} catch (error) {
+				const endTime = performance.now();
+				const timeDiff = Math.round(endTime - startTime);
+				statusBadge.style.display = 'inline-block';
+				timeLabel.innerText = `${timeDiff} ms`;
+
+				if (error.name === 'AbortError') {
+					statusBadge.innerText = 'Timeout';
+					statusBadge.className = 'status-badge status-error';
+					resBox.innerText = '⏱️ คำขอใช้เวลานานเกินไป (เกิน 30 วินาที)\nอาจเกิดจาก:\n- เซิร์ฟเวอร์ไม่ตอบสนอง\n- ข้อมูลไม่พบหรือ URL ไม่ถูกต้อง\n- ปัญหาการเชื่อมต่อฐานข้อมูล';
+					currentResponseRaw = 'Request Timeout (30s)';
+				} else {
+					statusBadge.innerText = 'Network Error';
+					statusBadge.className = 'status-badge status-error';
+					resBox.innerText = error.toString();
+					currentResponseRaw = error.toString();
+				}
+			} finally {
+				btn.disabled = false;
+				sendText.style.display = 'inline';
+				loader.style.display = 'none';
+				resBox.style.opacity = '1';
+			}
+		}
+
+		function syntaxHighlight(json) {
+			json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+			return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+				var cls = 'number';
+				if (/^"/.test(match)) {
+					if (/:$/.test(match)) { cls = 'key'; } else { cls = 'string'; }
+				} else if (/true|false/.test(match)) { cls = 'boolean'; } else if (/null/.test(match)) { cls = 'null'; }
+				return '<span class="' + cls + '">' + match + '</span>';
+			});
+		}
+
+		function fallbackCopyTextToClipboard(text) {
+			var textArea = document.createElement("textarea");
+			textArea.value = text;
+			textArea.style.top = "0";
+			textArea.style.left = "0";
+			textArea.style.position = "fixed";
+			document.body.appendChild(textArea);
+			textArea.focus();
+			textArea.select();
+			try {
+				if (document.execCommand('copy')) showToast();
+			} catch (err) {
+				console.error('Fallback: Oops, unable to copy', err);
+			}
+			document.body.removeChild(textArea);
+		}
+
+		function copyText(text) {
+			if (!navigator.clipboard) {
+				fallbackCopyTextToClipboard(text);
+				return;
+			}
+			navigator.clipboard.writeText(text).then(showToast).catch(function (err) {
+				console.error('Async: Could not copy text: ', err);
+				fallbackCopyTextToClipboard(text);
+			});
+		}
+
+		function copyResponse() {
+			if (currentResponseRaw) {
+				copyText(currentResponseRaw);
+			}
+		}
+		function copyApiUrl() {
+			copyText(baseUrl + document.getElementById('urlInput').value);
+		}
+		function copyExample() {
+			copyText(document.getElementById('exampleCode').innerText);
+		}
+		function showToast(msg = 'คัดลอกสำเร็จ') {
+			const t = document.getElementById('toastMsg');
+            t.innerText = msg;
+			t.classList.add('show');
+			setTimeout(() => t.classList.remove('show'), 2500);
+		}
+	</script>
+</body>
+
+</html>

@@ -1,0 +1,9 @@
+{
+    "name": "dgrweb/app",
+    "description": "DGR Web App",
+    "require": {
+        "rosell-dk/webp-convert": "^2.9",
+        "phpmailer/phpmailer": "^7.1",
+        "phpoffice/phpspreadsheet": "^5.9"
+    }
+}

@@ -1,0 +1,260 @@
+<?php
+define('_VALID_ACCESS', 1);
+$pageTitle = 'จัดการประกอบกิจการน้ำบาดาล';
+include_once('../includes/header.php');
+$id = $_GET['id'] ?? 0;
+$action = $id > 0 ? 'edit' : 'add';
+$hasAccess = (!empty($id)) ? ($userPermissions['edit'] ?? true) : ($userPermissions['add'] ?? true);
+if (!$hasAccess) {
+    echo "<script>alert('คุณไม่มีสิทธิ์เข้าถึงส่วนนี้'); window.location.href = 'index.php';</script>";
+    exit;
+}
+
+$data = [
+	'DocID' => 0,
+	'GroupID' => 0,
+
+	'TitleTH' => '',
+	'TitleEN' => '',
+	'File' => '',
+	'IsActive' => 'Y',
+	'OrderNo' => '0'
+];
+
+if ($id > 0) {
+	try {
+		if (isset($DB)) {
+			$stmt = $DB->prepare("SELECT * FROM groundwater_docs WHERE DocID = ?");
+			$stmt->execute([$id]);
+			$fetched = $stmt->fetch(PDO::FETCH_ASSOC);
+			if ($fetched) {
+					$data = $fetched;
+			} else {
+					echo "<script>alert('ไม่พบข้อมูล'); window.location.href = 'index.php';</script>";
+					exit;
+			}
+		}
+	} catch (PDOException $e) {}
+}
+
+// Fetch Attachments
+$attachments = [];
+if ($id > 0) {
+    try {
+        if (isset($DB)) {
+            $stmtAtt = $DB->prepare("SELECT * FROM groundwater_doc_attachments WHERE DocID = ? ORDER BY OrderNo ASC");
+            $stmtAtt->execute([$id]);
+            $attachments = $stmtAtt->fetchAll(PDO::FETCH_ASSOC);
+        }
+    } catch (PDOException $e) {}
+}
+
+// Fetch Groups
+$groups = [];
+try {
+	if(isset($DB)) {
+		$stmtGroups = $DB->prepare("SELECT GroupID, GroupNameTH FROM groundwater_doc_groups WHERE 1=1 AND IsActive = 'Y' ORDER BY OrderNo ASC");
+		$stmtGroups->execute();
+		$groups = $stmtGroups->fetchAll(PDO::FETCH_ASSOC);
+	}
+} catch(PDOException $e) {}
+
+?>
+
+<form action="action.php" method="POST" enctype="multipart/form-data" class="space-y-6" onsubmit="showLoading()">
+    <input type="hidden" name="action" value="save">
+    <input type="hidden" name="DocID" value="<?php echo $data['DocID']; ?>">
+
+    <div class="glass-panel p-6">
+        <div class="flex items-center justify-between border-b border-gray-100 pb-4 mb-6">
+            <div class="flex items-center gap-4">
+                <a href="index.php" class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-all border border-gray-100" title="กลับไปหน้ารวม">
+                    <i class="ph ph-arrow-left text-lg"></i>
+                </a>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        
+                        <?php echo $action == 'add' ? 'เพิ่มข้อมูลไประกอบกิจการน้ำบาดาล' : 'แก้ไขข้อมูลไฟล์ประกอบกิจการน้ำบาดาล'; ?>
+                    </h2>
+                   
+                </div>
+            </div>
+            
+            <!-- Status Toggle -->
+            <div class="flex items-center gap-3">
+                <span class="text-sm font-medium text-gray-650">สถานะการแสดงผล</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="hidden" name="IsActive" value="N">
+                    <input type="checkbox" name="IsActive" value="Y" class="sr-only peer" <?php echo ($data['IsActive'] == 'Y') ? 'checked' : ''; ?>>
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                </label>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column -->
+            <div class="lg:col-span-2 space-y-5">
+                <div class="bg-gray-50 p-6 rounded-xl border border-gray-200 space-y-5">
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">ชื่อไฟล์ (<?php echo $Lang1;?>) <span class="text-red-500">*</span></label>
+                        <input type="text" name="TitleTH" value="<?php echo htmlspecialchars($data['TitleTH']); ?>" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">ชื่อไฟล์ (<?php echo $Lang2;?>)</label>
+                        <input type="text" name="TitleEN" value="<?php echo htmlspecialchars($data['TitleEN'] ?? ''); ?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">รายละเอียด (<?php echo $Lang1;?>)</label>
+                        <textarea name="DescriptionTH" class="ckeditor_br"><?php echo htmlspecialchars($data['DescriptionTH'] ?? ''); ?></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">รายละเอียด (<?php echo $Lang2;?>)</label>
+                        <textarea name="DescriptionEN" class="ckeditor_br"><?php echo htmlspecialchars($data['DescriptionEN'] ?? ''); ?></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="space-y-6">
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <label class="block text-gray-700 font-medium mb-2">หมวดหมู่ <span class="text-red-500">*</span></label>
+                    <select name="GroupID" id="GroupID" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                        <option value="0">-- เลือกหมวดหมู่ --</option>
+                        <?php foreach($groups as $g): ?>
+                        <option value="<?php echo $g['GroupID']; ?>" <?php echo ($data['GroupID'] ?? 0) == $g['GroupID'] ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($g['GroupNameTH']); ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <h3 class="font-semibold text-gray-700 mb-4 flex items-center gap-2"><i class="ph ph-file-arrow-up"></i> ไฟล์แนบ </h3>
+                    
+                    <?php if(!empty($attachments)): ?>
+                    <div class="mb-4 space-y-2" id="currentFileContainer">
+                        <?php foreach($attachments as $att): 
+                            $pkId = $att['AttachID'] ?? $att['AttachmentID'] ?? '';
+                        ?>
+                        <div class="flex items-center justify-between p-2 bg-white border border-gray-200 rounded-lg text-sm group/att" id="att_<?php echo $pkId; ?>">
+                            <div class="flex items-center gap-2 flex-1 min-w-0">
+                                <i class="ph ph-dots-six-vertical text-gray-400 group-hover/att:text-gray-600 flex-shrink-0"></i>
+                                <?php
+                                $ext = strtolower(pathinfo($att['FilePath'], PATHINFO_EXTENSION));
+                                $icons = ['pdf' => 'ph-file-pdf text-red-500', 'doc' => 'ph-file-doc text-blue-600', 'docx' => 'ph-file-doc text-blue-600', 'xls' => 'ph-file-xls text-green-600', 'xlsx' => 'ph-file-xls text-green-600'];
+                                $icon = $icons[$ext] ?? 'ph-file text-gray-500';
+                                ?>
+                                <i class="ph <?php echo $icon; ?> text-lg flex-shrink-0"></i>
+                                <a href="<?php echo $FilePath; ?>groundwater/<?php echo htmlspecialchars($att['FilePath']); ?>" target="_blank" class="block truncate hover:text-blue-600 hover:underline">
+                                    <?php echo htmlspecialchars($att['FilePath']); ?>
+                                </a>
+                            </div>
+                            <div class="flex items-center gap-3 flex-shrink-0">
+                                <a href="<?php echo $FilePath; ?>groundwater/<?php echo htmlspecialchars($att['FilePath']); ?>" target="_blank" class="text-blue-500 hover:text-blue-700" title="ดูไฟล์">
+                                    <i class="ph ph-eye text-lg"></i>
+                                </a>
+                                <button type="button" 
+                                        onclick="removeAttachment(this, <?php echo $pkId; ?>)"
+                                        class="text-red-500 hover:text-red-700" title="ลบไฟล์">
+                                    <i class="ph ph-trash text-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
+                    <div id="deleteAttachmentsContainer"></div>
+                    
+                    <div class="mt-2">
+                        <input type="file" name="UploadFiles[]" id="downloadFile" accept=".pdf,.doc,.docx,.xls,.xlsx" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        <p class="text-xs text-gray-400 mt-2">รองรับ PDF, Word, Excel (ขนาดไฟล์ไม่เกิน <?php echo CONF_UPLOAD_MAX_MB; ?>MB)</p>
+                    </div>
+                    <div id="filePreviewContainer" class="mt-4 space-y-2"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="border-t border-gray-100 pt-6 mt-8 flex justify-end gap-3">
+            <a href="index.php" class="px-6 py-3 bg-gray-100 text-gray-650 hover:bg-gray-200 rounded-lg font-medium transition-colors flex items-center justify-center"><i class="ph ph-x mr-2"></i> ยกเลิก</a>
+            <button type="submit" class="btn-primary px-8 h-12 text-base font-semibold shadow-lg shadow-primary/30 flex items-center gap-2">
+                <i class="ph ph-floppy-disk"></i> บันทึกข้อมูล
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+function removeAttachment(btn, attId) {
+    let el = btn.closest('#att_' + attId);
+    if (!el) el = document.getElementById('att_' + attId);
+    if (el) {
+        el.remove();
+    }
+    
+    let container = document.getElementById('deleteAttachmentsContainer');
+    if (container) {
+        let input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'delete_attachments[]';
+        input.value = attId;
+        container.appendChild(input);
+    }
+}
+
+document.getElementById('downloadFile').addEventListener('change', function(e) {
+    var container = document.getElementById('filePreviewContainer');
+    container.innerHTML = '';
+    var files = e.target.files;
+    
+    if (files.length > 0) {
+        // Add clear button
+        var clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.className = 'text-xs text-red-500 hover:text-red-700 mb-2 flex items-center gap-1';
+        clearBtn.innerHTML = '<i class="ph ph-trash"></i> ยกเลิกการเลือกไฟล์ทั้งหมด';
+        clearBtn.onclick = function() {
+            document.getElementById('downloadFile').value = '';
+            container.innerHTML = '';
+        };
+        container.appendChild(clearBtn);
+
+        for (var i = 0; i < files.length; i++) {
+            let file = files[i];
+            let objUrl = URL.createObjectURL(file);
+            var div = document.createElement('div');
+            div.className = 'flex items-center justify-between p-2 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-800';
+            div.innerHTML = '<div class="flex items-center gap-2 truncate">' +
+                            '<i class="ph ph-file-plus text-lg"></i>' +
+                            '<a href="'+objUrl+'" target="_blank" class="truncate hover:underline" title="'+file.name+'">'+file.name+'</a>' +
+                            '</div>' +
+                            '<a href="'+objUrl+'" target="_blank" class="text-blue-500 hover:text-blue-700" title="ดูไฟล์"><i class="ph ph-eye text-lg"></i></a>';
+            container.appendChild(div);
+        }
+    }
+});
+</script>
+
+<!-- Flatpickr CSS & JS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/th.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const groupSelect = document.getElementById('GroupID');
+        if (groupSelect) {
+        }
+        
+        // Datepicker Initialization
+        if (typeof flatpickr !== 'undefined') {
+            flatpickr(".datepicker", {
+                dateFormat: "d/m/Y",
+                locale: "th",
+                allowInput: true
+            });
+        }
+    });
+</script>
+<?php include_once('../assets/modules/ckeditor.php'); ?>
+<?php include_once('../includes/footer.php'); ?>

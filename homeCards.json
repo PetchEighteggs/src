@@ -1,0 +1,110 @@
+﻿[
+  {
+    "slug": "daylygroundwatersituation",
+    "title": "สรุปสถานการณ์ประจำวัน",
+    "titleEn": "Groundwater\nSituation",
+    "description": "ประจำวันที่ 21 พฤษภาคม 2569",
+    "descriptionEn": "Daily situation report on May 21, 2026",
+    "link": "/th/services/groundwater-situation",
+    "linkEn": "/en/services/groundwater-situation",
+    "bgClass": "bg-grad-0",
+    "icon": "/assets/img/dalyreport.png",
+    "direction": "left"
+  },
+  {
+    "slug": "applypermit",
+    "title": "ขอใบอนุญาต",
+    "titleEn": "Apply Permit",
+    "description": "การเจาะบ่อน้ำบาดาล\nและขออนุญาตใช้",
+    "descriptionEn": "Drilling a groundwater well and applying for a permit.",
+    "link": "/th/operation/drill-use-permission",
+    "linkEn": "/en/operation/drill-use-permission",
+    "bgClass": "bg-grad-2",
+    "icon": "/assets/img/C20.webp",
+    "direction": "left"
+  },
+  {
+    "slug": "groundwatermap",
+    "title": "แผนที่น้ำบาดาล",
+    "titleEn": "Groundwater Map",
+    "description": "แผนที่แสดงศักยภาพน้ำบาดาลในแต่ละจังหวัด",
+    "descriptionEn": "Map showing groundwater potential in each province",
+    "link": "/th/services/map",
+    "linkEn": "/en/services/map",
+    "bgClass": "bg-grad-3",
+    "icon": "/assets/img/C19.webp",
+    "direction": "left"
+  },
+  {
+    "slug": "accountinformation",
+    "title": "บัญชีข้อมูล",
+    "titleEn": "Account Information",
+    "description": "DGR DATA CATALOG",
+    "descriptionEn": "DGR DATA CATALOG",
+    "link": "/th/services/data-catalog",
+    "linkEn": "/en/services/data-catalog",
+    "bgClass": "bg-grad-4",
+    "icon": "/assets/img/C04.webp",
+    "direction": "left"
+  },
+  {
+    "slug": "groundwaterlaw",
+    "title": "กฎหมายน้ำบาดาล",
+    "titleEn": "Groundwater Law",
+    "description": "พ.ร.บ. กฎกระทรวง และ ประกาศต่างๆ",
+    "descriptionEn": "Water Resources Act, regulations, and announcements",
+    "link": "/th/services/law",
+    "linkEn": "/en/services/law",
+    "bgClass": "bg-grad-5",
+    "icon": "/assets/img/gwlaw.png",
+    "direction": "left"
+  },
+  {
+    "slug": "pasutara",
+    "title": "ข้อมูลบ่อน้ำบาดาล",
+    "titleEn": "PASUTATR",
+    "description": "สืบค้นข้อมูลบ่อน้ำบาดาลทะเบียนบ่อ",
+    "descriptionEn": "Search for groundwater well data registered in the well book",
+    "link": "/th/services/well-data",
+    "linkEn": "/en/services/well-data",
+    "bgClass": "bg-grad-6",
+    "icon": "/assets/img/welldata.png",
+    "direction": "left"
+  },
+  {
+    "slug": "hydrogeologicaldatabase",
+    "title": "ฐานข้อมูล\nอุทกธรณีวิทยา 2 มิติ /3 มิติ",
+    "titleEn": "Hydrogeological Database 2D/3D",
+    "description": "แบบจำลองชั้นน้ำบาดาลเพื่อการศึกษา",
+    "descriptionEn": "Groundwater layer modeling for education",
+    "link": "/th/services/hydro-db",
+    "linkEn": "/en/services/hydro-db",
+    "bgClass": "bg-grad-8",
+    "icon": "/assets/img/C08.webp",
+    "direction": "left"
+  },
+  {
+    "slug": "receivecomplaints",
+    "title": "ความรู้ในการเติมน้ำใต้ดิน",
+    "titleEn": "Groundwater Recharge.",
+    "description": "กรมทรัพยากรน้ำบาดาล",
+    "descriptionEn": "Water Resources Department",
+    "link": "/th/news/knowlaged",
+    "linkEn": "/en/news/knowlaged",
+    "bgClass": "bg-grad-9",
+    "icon": "/assets/img/fillgwr.png",
+    "direction": "left"
+  },
+  {
+    "slug": "news",
+    "title": "ข่าวสาร ประกาศ",
+    "titleEn": "News & Announcements",
+    "description": "ข่าวสารและประกาศล่าสุด",
+    "descriptionEn": "Latest news and announcements",
+    "link": "/th/news",
+    "linkEn": "/en/news",
+    "bgClass": "bg-grad-10",
+    "icon": "/assets/img/news_icon.png",
+    "direction": "left"
+  }
+]

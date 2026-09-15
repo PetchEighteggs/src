@@ -1,0 +1,132 @@
+.bg-grad-0 {
+    background-image: linear-gradient(180deg,
+        #ebe3d0 0%,
+        #ebe3d0 100%) !important;
+  }
+
+  .bg-grad-1 {
+    background-image: linear-gradient(180deg,
+        #25f191 0%,
+        #31c7f2 100%) !important;
+  }
+
+  .bg-grad-2 {
+    background-image: linear-gradient(180deg,
+        #97d9e2 0%,
+        #f6f9f8 100%) !important;
+  }
+
+  .bg-grad-3 {
+    background-image: linear-gradient(180deg,
+        #00bcff 0%,
+        #ffffff 100%) !important;
+  }
+
+  .bg-grad-4 {
+    background-image: linear-gradient(180deg,
+        #f6e3c5 0%,
+        #fffefd 100%) !important;
+  }
+
+  .bg-grad-5 {
+    background-image: linear-gradient(180deg,
+        #ffbb00 0%,
+        #ffcece 100%) !important;
+  }
+
+  .bg-grad-6 {
+    background-image: linear-gradient(180deg,
+        #519bfb 0%,
+        #e2a5fe 100%) !important;
+  }
+
+  .bg-grad-7 {
+    background-image: linear-gradient(180deg,
+        #d0c3d2 0%,
+        #fffdf9 100%) !important;
+  }
+
+  .bg-grad-8 {
+    background-image: linear-gradient(180deg,
+        #bceafb 0%,
+        #ebe3d0 100%) !important;
+  }
+
+  .bg-grad-9 {
+    background-image: linear-gradient(180deg,
+        #7ec58b 0%,
+        #9ee8ac 100%) !important;
+  }
+
+  .bg-grad-10 {
+    background-image: linear-gradient(180deg,
+        #fffdf9 0%,
+        #d0c3d2 100%) !important;
+  }
+
+  .bg-grad-11 {
+    background-image: linear-gradient(180deg,
+        #7dc48a 0%,
+        #9ee8ac 100%) !important;
+  }
+
+  .bg-grad-12 {
+    background-image: linear-gradient(180deg,
+        #ebe3d0 0%,
+        #ffffff 100%) !important;
+  }
+
+  .bg-grad-13 {
+    background-image: linear-gradient(180deg,
+        #0f8cba 0%,
+        #19ade4 100%) !important;
+  }
+
+  /* intranet gradient */
+  .bg-grad-14 {
+    background-image: linear-gradient(180deg,
+        #0DE7F6 0%,
+        #ECF8AD 100%) !important;
+  }
+
+  .bg-grad-15 {
+    background-image: linear-gradient(180deg,
+        #A7EA3B 0%,
+        #39F497 100%) !important;
+  }
+
+  .bg-grad-16 {
+    background-image: linear-gradient(0deg,
+        #25F191 0%,
+        #31C7F2 80%) !important;
+  }
+
+  .bg-grad-17 {
+    background-image: linear-gradient(180deg,
+        #CEC9FF 0%,
+        #FFCECE 100%) !important;
+  }
+
+  .bg-grad-18 {
+    background-image: linear-gradient(180deg,
+        #0DE7F6 0%,
+        #ECF8AD 100%) !important;
+  }
+
+  .bg-grad-19 {
+    background-image: linear-gradient(180deg,
+        #C2F8A5 0%,
+        #F8D8A5 100%) !important;
+  }
+
+  .bg-grad-20 {
+    background-image: linear-gradient(180deg,
+        #97D9E2 0%,
+        #FFBEBE 100%) !important;
+  }
+
+  .bg-grad-21 {
+    background-image: linear-gradient(180deg,
+        #689CFC 0%,
+        #D2A4FD 100%) !important;
+  }
