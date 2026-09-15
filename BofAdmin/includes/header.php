@@ -174,6 +174,11 @@ else if (file_exists('../../../assets/css/style.css')) $assetsPath = '../../../a
 else if (file_exists('../../../../assets/css/style.css')) $assetsPath = '../../../../assets';
 else $assetsPath = '/BofAdmin/assets';
 
+$styleFile = dirname(__DIR__) . '/assets/css/style.css';
+$mainJsFile = dirname(__DIR__) . '/assets/js/main.js';
+$styleVersion = is_file($styleFile) ? (string) filemtime($styleFile) : '1';
+$mainJsVersion = is_file($mainJsFile) ? (string) filemtime($mainJsFile) : '1';
+
 // Log page visit
 try {
     if(isset($DB)) {
@@ -242,8 +247,8 @@ $pageTitle = $pageTitle ?? 'DGR Backoffice';
     </style>
     
     <!-- Custom CSS & JS -->
-    <link rel="stylesheet" href="<?php echo $assetsPath; ?>/css/style.css">
-    <script src="<?php echo $assetsPath; ?>/js/main.js" defer></script>
+    <link rel="stylesheet" href="<?php echo $assetsPath; ?>/css/style.css?v=<?php echo $styleVersion; ?>">
+    <script src="<?php echo $assetsPath; ?>/js/main.js?v=<?php echo $mainJsVersion; ?>" defer></script>
 </head>
 <body>
     
