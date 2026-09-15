@@ -1,0 +1,30 @@
+# Dependencies
+/vendor/
+/BofAdmin/assets/modules/ckfinder/core/connector/php/vendor/
+
+# Runtime data and uploaded files
+/uploads/
+/caching/
+*.log
+
+# Local configuration and credentials
+/.env
+/.env.*
+!/.env.example
+/configuration.php
+/config/func.class.php
+/reset_pass.php
+/show_passwords.php
+/intranet-server/local.php
+/intranet-server/test-account.txt
+
+# Database exports (keep migration SQL files explicitly named outside this pattern)
+/DB/dgr_db26_server_*.sql
+
+# Editor, dependencies, builds, and test output
+/.vscode/
+/intranet-frontend/node_modules/
+/intranet-frontend/dist/
+/intranet/
+/intranet-frontend/test-results/
+/intranet-frontend/playwright-report/
