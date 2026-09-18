@@ -5,22 +5,20 @@ include_once('../../configuration.php');
 include_once('../../config/ms_com.php');
 include_once('../../config/ms.class.php');
 include_once('../../config/func.class.php');
+require_once('../includes/action_security.php');
 
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 $MS = new MS($DB);
-
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    header("Location: ../login.php");
-    exit;
-}
+$StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
 $action = mosGetParam($_FORM, 'action', '');
 $id = mosGetParam($_FORM, 'id', '');
 
 if ($action === 'delete' && $id != '') {
     $stmt = $DB->prepare("UPDATE news_category SET DelData = 'Y', DelDataDate = NOW(), DelDataBy = ?, DelDataIP = ? WHERE CategoryID = ?");
-    $stmt->execute([$_SESSION['BofAdmin_StaffID'], $_SERVER['REMOTE_ADDR'], $id]);
-    $MS->StaffLog('ลบหมวดหมู่ข่าวสาร', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 12, $id);
+    $stmt->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $id]);
+    $MS->StaffLog('ลบหมวดหมู่ข่าวสาร', $_SERVER['REQUEST_URI'], $StaffID, 3, 12, $id);
     $_SESSION['sys_msg'] = "ลบข้อมูลสำเร็จ";
     header("Location: index.php");
     exit;
@@ -30,11 +28,11 @@ if ($action === 'delete' && $id != '') {
         $idArray = array_filter(explode(',', $ids), 'is_numeric');
         if (!empty($idArray)) {
             $placeholders = implode(',', array_fill(0, count($idArray), '?'));
-            $params = array_merge([$_SESSION['BofAdmin_StaffID'], $_SERVER['REMOTE_ADDR']], $idArray);
+            $params = array_merge([$StaffID, $_SERVER['REMOTE_ADDR']], $idArray);
             $stmt = $DB->prepare("UPDATE news_category SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE CategoryID IN ($placeholders)");
             $stmt->execute($params);
             
-            $MS->StaffLog('ลบหมวดหมู่ข่าวสาร', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 12);
+            $MS->StaffLog('ลบหมวดหมู่ข่าวสาร', $_SERVER['REQUEST_URI'], $StaffID, 3, 12);
         }
     }
     header("Location: index.php");
@@ -46,11 +44,11 @@ if ($action === 'delete' && $id != '') {
         if (!empty($idArray)) {
             $status = ($action === 'bulk_active') ? 'Y' : 'N';
             $placeholders = implode(',', array_fill(0, count($idArray), '?'));
-            $params = array_merge([$status, $_SESSION['BofAdmin_StaffID'], $_SERVER['REMOTE_ADDR']], $idArray);
+            $params = array_merge([$status, $StaffID, $_SERVER['REMOTE_ADDR']], $idArray);
             $stmt = $DB->prepare("UPDATE news_category SET IsActive=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE CategoryID IN ($placeholders)");
             $stmt->execute($params);
             
-            $MS->StaffLog('เปลี่ยนสถานะหมวดหมู่ข่าวสาร', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 12);
+            $MS->StaffLog('เปลี่ยนสถานะหมวดหมู่ข่าวสาร', $_SERVER['REQUEST_URI'], $StaffID, 3, 12);
         }
     }
     header("Location: index.php");
@@ -74,18 +72,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $DB->prepare("INSERT INTO news_category (CategoryName_TH, CategoryName_EN, Slug, OrderNo, IsActive, CreateDate, CreateBy, CreateIP) VALUES (?, ?, ?, ?, ?, NOW(), ?, ?)");
         $stmt->execute([
             $CategoryName_TH, $CategoryName_EN, $Slug, $OrderNo, $IsActive,
-            $_SESSION['BofAdmin_StaffID'], $_SERVER['REMOTE_ADDR']
+            $StaffID, $_SERVER['REMOTE_ADDR']
         ]);
         $newId = $DB->lastInsertId();
-        $MS->StaffLog('เพิ่มหมวดหมู่ข่าวสาร', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 12, $newId);
+        $MS->StaffLog('เพิ่มหมวดหมู่ข่าวสาร', $_SERVER['REQUEST_URI'], $StaffID, 3, 12, $newId);
         $_SESSION['sys_msg'] = "เพิ่มข้อมูลสำเร็จ";
     } elseif ($action === 'edit' && $id != '') {
         $stmt = $DB->prepare("UPDATE news_category SET CategoryName_TH = ?, CategoryName_EN = ?, Slug = ?, OrderNo = ?, IsActive = ?, UpdateDate = NOW(), UpdateBy = ?, UpdateIP = ? WHERE CategoryID = ?");
         $stmt->execute([
             $CategoryName_TH, $CategoryName_EN, $Slug, $OrderNo, $IsActive,
-            $_SESSION['BofAdmin_StaffID'], $_SERVER['REMOTE_ADDR'], $id
+            $StaffID, $_SERVER['REMOTE_ADDR'], $id
         ]);
-        $MS->StaffLog('แก้ไขหมวดหมู่ข่าวสาร', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 12, $id);
+        $MS->StaffLog('แก้ไขหมวดหมู่ข่าวสาร', $_SERVER['REQUEST_URI'], $StaffID, 3, 12, $id);
         $_SESSION['sys_msg'] = "แก้ไขข้อมูลสำเร็จ";
     }
     

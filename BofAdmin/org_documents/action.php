@@ -4,16 +4,13 @@ session_start();
 require_once('../../configuration.php');
 require_once('../../config/ms_com.php');
 require_once('../../config/ms.class.php');
+require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 $MS = new MS($DB);
+$StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
 $action = $_REQUEST['action'] ?? '';
-
-// Verify Access
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    header("Location: ../login.php");
-    exit;
-}
 
 $uploadDir = $sServerDirFile . "org_documents/";
 if (!is_dir($uploadDir)) {
@@ -119,7 +116,7 @@ if ($action == 'save') {
                     $newName = "org_" . time() . "_" . uniqid() . "." . $ext;
                     if (move_uploaded_file($_FILES['UploadFiles']['tmp_name'][$i], $uploadDir . $newName)) {
                         $stmtAtt = $DB->prepare("INSERT INTO org_doc_attachments (DocID, FileName, FilePath, FileType, FileSize, Downloads, OrderNo, CreateDate, CreateBy, CreateIP, DelData) VALUES (?, ?, ?, ?, ?, 0, 0, NOW(), ?, ?, 'N')");
-                        $stmtAtt->execute([$docIDToUse, $originalName, $newName, $ext, $size, $_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']]);
+                        $stmtAtt->execute([$docIDToUse, $originalName, $newName, $ext, $size, $StaffID, $_SERVER['REMOTE_ADDR']]);
                     }
                 }
             }
@@ -128,7 +125,7 @@ if ($action == 'save') {
         $moduleNames = ['policy' => 'นโยบายและยุทธศาสตร์', 'digital_plan' => 'แผนปฏิบัติการดิจิทัล', 'annual_plan' => 'แผนปฏิบัติราชการประจำปี', 'budget' => 'งบประมาณรายจ่ายประจำปี', 'report' => 'คำรับรอง/รายงานผล'];
         $moduleName = $moduleNames[$serviceType] ?? 'เอกสารองค์กร';
         $logAction = ($downloadID > 0 ? 'แก้ไข' : 'เพิ่ม') . $moduleName . ' ID: ' . $docIDToUse;
-        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 106, ($downloadID > 0 ? $downloadID : $DB->lastInsertId()));
+        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $StaffID, '', 106, ($downloadID > 0 ? $downloadID : $DB->lastInsertId()));
         header("Location: index.php?type=".urlencode($serviceType));
         exit;
     } catch (PDOException $e) {
@@ -140,13 +137,13 @@ if ($action == 'save') {
     $serviceType = $_GET['type'] ?? 'policy';
     if ($id > 0) {
         try {
-            $DB->prepare("UPDATE org_doc_attachments SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE DocID = ?")->execute([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR'], $id]);
+            $DB->prepare("UPDATE org_doc_attachments SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE DocID = ?")->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $id]);
             
             $stmt = $DB->prepare("UPDATE org_docs SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE DocID = ?");
-            $stmt->execute([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR'], $id]);
+            $stmt->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $id]);
             $moduleNames = ['policy' => 'นโยบายและยุทธศาสตร์', 'digital_plan' => 'แผนปฏิบัติการดิจิทัล', 'annual_plan' => 'แผนปฏิบัติราชการประจำปี', 'budget' => 'งบประมาณรายจ่ายประจำปี', 'report' => 'คำรับรอง/รายงานผล'];
             $moduleName = $moduleNames[$serviceType] ?? 'เอกสารองค์กร';
-            $MS->StaffLog('ลบ' . $moduleName . ' ID: ' . $id, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 106, $id);
+            $MS->StaffLog('ลบ' . $moduleName . ' ID: ' . $id, $_SERVER['REQUEST_URI'], $StaffID, '', 106, $id);
             header("Location: index.php?type=".urlencode($serviceType));
             exit;
         } catch (PDOException $e) {
@@ -173,14 +170,14 @@ if ($action == 'save') {
                 $stmt->execute($params);
             } else if ($action == 'bulk_delete') {
                 $params = $idArray;
-                $DB->prepare("UPDATE org_doc_attachments SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE DocID IN ($placeholders)")->execute(array_merge([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']], $params));
+                $DB->prepare("UPDATE org_doc_attachments SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE DocID IN ($placeholders)")->execute(array_merge([$StaffID, $_SERVER['REMOTE_ADDR']], $params));
                 
                 $sqlDel = "UPDATE org_docs SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE DocID IN ($placeholders)";
                 $stmtDel = $DB->prepare($sqlDel);
-                $stmtDel->execute(array_merge([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']], $params));
+                $stmtDel->execute(array_merge([$StaffID, $_SERVER['REMOTE_ADDR']], $params));
                 $moduleNames = ['policy' => 'นโยบายและยุทธศาสตร์', 'digital_plan' => 'แผนปฏิบัติการดิจิทัล', 'annual_plan' => 'แผนปฏิบัติราชการประจำปี', 'budget' => 'งบประมาณรายจ่ายประจำปี', 'report' => 'คำรับรอง/รายงานผล'];
                 $moduleName = $moduleNames[$serviceType] ?? 'เอกสารองค์กร';
-                $MS->StaffLog('ลบ' . $moduleName . ' Bulk ID: ' . $ids, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 106, 0);
+                $MS->StaffLog('ลบ' . $moduleName . ' Bulk ID: ' . $ids, $_SERVER['REQUEST_URI'], $StaffID, '', 106, 0);
             }
         }
     }

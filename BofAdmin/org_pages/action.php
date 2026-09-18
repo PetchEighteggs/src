@@ -5,15 +5,14 @@ include_once('../../configuration.php');
 include_once('../../config/ms_com.php');
 include_once('../../config/ms.class.php');
 include_once('../../config/func.class.php');
+require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 $MS = new MS($DB);
-
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    header("Location: ../login.php"); exit;
-}
+$StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
 function uploadMultipleFiles($fileArray, $pageId, $DB, $tableName, $pathCol) {
-    global $sServerDirFile, $sServerImgDir, $_Config;
+    global $sServerDirFile, $sServerImgDir, $_Config, $StaffID;
     if (empty($fileArray['name'][0])) return;
     
     $imageExts = $_Config['AllowedExtensions']['Image'] ?? ['jpg', 'jpeg', 'gif', 'png', 'svg', 'webp'];
@@ -41,7 +40,7 @@ function uploadMultipleFiles($fileArray, $pageId, $DB, $tableName, $pathCol) {
         if (move_uploaded_file($tmpName, $destPath)) {
             $nameWithoutExt = pathinfo($name, PATHINFO_FILENAME);
             $stmt = $DB->prepare("INSERT INTO `{$tableName}` (`PageID`, `FileName_TH`, `FileName_EN`, `{$pathCol}`, `FileType`, `FileSize`, `CreateDate`, `CreateBy`, `CreateIP`, `DelData`) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, ?, 'N')");
-            $stmt->execute([$pageId, $nameWithoutExt, $nameWithoutExt, $dbPath, $ext, $fileArray['size'][$key], $_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']]);
+            $stmt->execute([$pageId, $nameWithoutExt, $nameWithoutExt, $dbPath, $ext, $fileArray['size'][$key], $StaffID, $_SERVER['REMOTE_ADDR']]);
         }
     }
 }
@@ -136,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'edit'
             $_POST['Content_EN'] ?? '',
             isset($_POST['HasFile']) ? 'Y' : 'N',
             isset($_POST['HasTimeline']) ? 'Y' : 'N',
-            $_SESSION['admin_id'] ?? 1,
+            $StaffID,
             $_SERVER['REMOTE_ADDR'],
             $id
         ]);
@@ -167,7 +166,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'edit'
                 }
                 // Soft delete
                 $stmt = $DB->prepare("UPDATE org_pages_attachments SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE AttachmentID = ?");
-                $stmt->execute([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR'], $aid]);
+                $stmt->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $aid]);
             }
         }
 
@@ -191,7 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'edit'
             $tids = array_filter(explode(',', $deleteTimelines), 'is_numeric');
             foreach ($tids as $tid) {
                 $stmt = $DB->prepare("UPDATE org_pages_timelines SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE TimelineID = ?");
-                $stmt->execute([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR'], $tid]);
+                $stmt->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $tid]);
             }
         }
 
@@ -211,10 +210,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'edit'
 
                 if ($tid === 'new') {
                     $stmt = $DB->prepare("INSERT INTO org_pages_timelines (PageID, Year_TH, Year_EN, Title_TH, Title_EN, Description_TH, Description_EN, OrderNo, IsHeader, CreateDate, CreateBy, CreateIP) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?)");
-                    $stmt->execute([$id, $y_th, $y_en, $t_th, $t_en, $d_th, $d_en, $order, $is_header, $_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']]);
+                    $stmt->execute([$id, $y_th, $y_en, $t_th, $t_en, $d_th, $d_en, $order, $is_header, $StaffID, $_SERVER['REMOTE_ADDR']]);
                 } else {
                     $stmt = $DB->prepare("UPDATE org_pages_timelines SET Year_TH = ?, Year_EN = ?, Title_TH = ?, Title_EN = ?, Description_TH = ?, Description_EN = ?, OrderNo = ?, IsHeader = ?, UpdateDate = NOW(), UpdateBy = ?, UpdateIP = ? WHERE TimelineID = ? AND PageID = ?");
-                    $stmt->execute([$y_th, $y_en, $t_th, $t_en, $d_th, $d_en, $order, $is_header, $_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR'], $tid, $id]);
+                    $stmt->execute([$y_th, $y_en, $t_th, $t_en, $d_th, $d_en, $order, $is_header, $StaffID, $_SERVER['REMOTE_ADDR'], $tid, $id]);
                 }
             }
         }
@@ -224,7 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'edit'
         $pageTitle = $stmtTitle->fetchColumn();
         $logMessage = 'แก้ไขหน้า ' . ($pageTitle ? ' (' . $pageTitle . ')' : '');
         
-        $MS->StaffLog($logMessage, $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 101, $id);
+        $MS->StaffLog($logMessage, $_SERVER['REQUEST_URI'], $StaffID, 3, 101, $id);
         header("Location: index.php");
         exit;
     } catch (PDOException $e) {
