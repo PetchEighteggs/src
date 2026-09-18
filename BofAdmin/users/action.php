@@ -10,20 +10,22 @@ require_once('../includes/action_security.php');
 
 $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 $StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
-$action = mosGetParam($_FORM, 'action', '');
-$id = mosGetParam($_FORM, 'id', '');
+$action = mosGetParam($_POST, 'action', '');
+$id = mosGetParam($_POST, 'id', '');
 
-$Username = mosGetParam($_FORM, 'Username', '');
-$Password = mosGetParam($_FORM, 'Password', '');
-$Name = mosGetParam($_FORM, 'Name', '');
-$Email = mosGetParam($_FORM, 'Email', '');
-$Tel = mosGetParam($_FORM, 'Tel', '');
-$GroupID = mosGetParam($_FORM, 'GroupID', 'S');
-$SetGroupID = mosGetParam($_FORM, 'SetGroupID', 0);
-$Status = mosGetParam($_FORM, 'Status', 'Y');
+$Username = mosGetParam($_POST, 'Username', '');
+$Password = mosGetParam($_POST, 'Password', '');
+$Name = mosGetParam($_POST, 'Name', '');
+$Email = mosGetParam($_POST, 'Email', '');
+$Tel = mosGetParam($_POST, 'Tel', '');
+$GroupID = mosGetParam($_POST, 'GroupID', 'S');
+$SetGroupID = mosGetParam($_POST, 'SetGroupID', 0);
+$Status = mosGetParam($_POST, 'Status', 'Y');
 
 try {
     if ($action == 'add') {
@@ -116,8 +118,8 @@ try {
 
         $MS->StaffLog('ลบผู้ใช้งานระบบ', $_SERVER['REQUEST_URI'], $StaffID, 4, 8, $id);
 
-    } else if ($action == 'bulk_delete' && isset($_GET['ids'])) {
-        $ids = explode(',', $_GET['ids']);
+    } else if ($action == 'bulk_delete' && isset($_POST['ids'])) {
+        $ids = explode(',', $_POST['ids']);
         $inQuery = implode(',', array_fill(0, count($ids), '?'));
         $stmt = $DB->prepare("UPDATE staff SET DelData='Y', DelDataDate=NOW(), DelDataIP=? WHERE StaffID IN ($inQuery)");
         $params = [$_SERVER['REMOTE_ADDR']];
@@ -126,8 +128,8 @@ try {
 
         $MS->StaffLog('ลบผู้ใช้งานระบบ', $_SERVER['REQUEST_URI'], $StaffID, 4, 8);
         
-    } else if ($action == 'bulk_active' && isset($_GET['ids'])) {
-        $ids = explode(',', $_GET['ids']);
+    } else if ($action == 'bulk_active' && isset($_POST['ids'])) {
+        $ids = explode(',', $_POST['ids']);
         $inQuery = implode(',', array_fill(0, count($ids), '?'));
         $stmt = $DB->prepare("UPDATE staff SET Status='Y', UpdateDate=NOW(), UpdateIP=? WHERE StaffID IN ($inQuery)");
         $params = [$_SERVER['REMOTE_ADDR']];
@@ -136,8 +138,8 @@ try {
 
         $MS->StaffLog('เปลี่ยนสถานะผู้ใช้งานระบบ', $_SERVER['REQUEST_URI'], $StaffID, 4, 8);
 
-    } else if ($action == 'bulk_inactive' && isset($_GET['ids'])) {
-        $ids = explode(',', $_GET['ids']);
+    } else if ($action == 'bulk_inactive' && isset($_POST['ids'])) {
+        $ids = explode(',', $_POST['ids']);
         $inQuery = implode(',', array_fill(0, count($ids), '?'));
         $stmt = $DB->prepare("UPDATE staff SET Status='N', UpdateDate=NOW(), UpdateIP=? WHERE StaffID IN ($inQuery)");
         $params = [$_SERVER['REMOTE_ADDR']];

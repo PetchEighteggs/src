@@ -6,6 +6,7 @@ if (isset($_GET['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVE
 }
 $pageTitle = "จัดการผู้ใช้งานระบบ";
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $search = mosGetParam($_FORM, 'search', '');
 $status = mosGetParam($_FORM, 'status', '');
@@ -170,6 +171,13 @@ $isAdvancedActive = ($filterGroup !== '' || $filterSetGroup !== '' || $filterDep
         <span class="text-sm text-gray-500 ml-2" id="bulkCountText"></span>
     </div>
 
+    <form id="userActionForm" action="action.php" method="POST" class="hidden">
+        <?php echo bofSecurityCsrfField(); ?>
+        <input type="hidden" name="action" id="userActionName" value="">
+        <input type="hidden" name="id" id="userActionId" value="">
+        <input type="hidden" name="ids" id="userActionIds" value="">
+    </form>
+
     <?php if (defined('IS_AJAX')) { ob_clean(); } ?>
     <div id="usersTableContainer" class="space-y-6">
         <div class="overflow-x-auto">
@@ -260,9 +268,9 @@ $isAdvancedActive = ($filterGroup !== '' || $filterSetGroup !== '' || $filterDep
                                     <button type="button" onclick="openHistoryModal(<?php echo $row['StaffID']; ?>, 'users')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-200 transition-colors" title="ประวัติการใช้งาน">
                                         <i class="ph ph-clock-counter-clockwise"></i>
                                     </button>
-                                    <a href="action.php?action=delete&id=<?php echo $row['StaffID']; ?>" onclick="confirmLink(event, this.href, 'ยืนยันการลบรายการนี้หรือไม่?');" class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="ลบ">
+                                    <button type="button" onclick="deleteUser(<?php echo (int)$row['StaffID']; ?>)" class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="ลบ">
                                         <i class="ph ph-trash"></i>
-                                    </a>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -494,7 +502,28 @@ function executeBulkAction() {
     }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'action.php?action=' + actionStr + '&ids=' + ids;
+            document.getElementById('userActionName').value = actionStr;
+            document.getElementById('userActionId').value = '';
+            document.getElementById('userActionIds').value = ids;
+            document.getElementById('userActionForm').submit();
+        }
+    });
+}
+
+function deleteUser(id) {
+    AdminDialog.fire({
+        title: 'ยืนยันการลบ?',
+        text: 'ยืนยันการลบรายการนี้หรือไม่?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยันการลบ',
+        cancelButtonText: 'ยกเลิก'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('userActionName').value = 'delete';
+            document.getElementById('userActionId').value = id;
+            document.getElementById('userActionIds').value = '';
+            document.getElementById('userActionForm').submit();
         }
     });
 }

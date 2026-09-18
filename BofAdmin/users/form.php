@@ -1,6 +1,7 @@
 <?php
 $pageTitle = "จัดการผู้ใช้งานระบบ";
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $id = mosGetParam($_FORM, 'id', '');
 $row = [
@@ -102,6 +103,7 @@ try {
     </div>
 
     <form action="action.php" method="POST" class="space-y-6" onsubmit="showLoading()">
+        <?php echo bofSecurityCsrfField(); ?>
         <input type="hidden" name="action" value="<?php echo $id == '' ? 'add' : 'edit'; ?>">
         <input type="hidden" name="id" value="<?php echo htmlspecialchars($id); ?>">
         
