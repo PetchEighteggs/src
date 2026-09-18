@@ -6,6 +6,7 @@ if (isset($_GET['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVE
 }
 $pageTitle = "จัดการ Popup";
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $search = mosGetParam($_FORM, 'search', '');
 $searchStatus = $_GET['status'] ?? '';
@@ -131,6 +132,13 @@ try {
         <span class="text-sm text-gray-500 ml-2" id="bulkCountText"></span>
     </div>
     <?php endif; ?>
+
+    <form id="popupActionForm" action="action.php" method="POST" class="hidden">
+        <?php echo bofSecurityCsrfField(); ?>
+        <input type="hidden" name="action" id="popupActionName" value="">
+        <input type="hidden" name="PopupID" id="popupActionId" value="">
+        <input type="hidden" name="ids" id="popupActionIds" value="">
+    </form>
 
     <?php if (defined('IS_AJAX')) { ob_clean(); } ?>
     <div id="bannersTableContainer" class="space-y-6">
@@ -471,7 +479,10 @@ function executeBulkAction() {
     }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'action.php?action=' + actionStr + '&ids=' + ids;
+            document.getElementById('popupActionName').value = actionStr;
+            document.getElementById('popupActionId').value = '';
+            document.getElementById('popupActionIds').value = ids;
+            document.getElementById('popupActionForm').submit();
         }
     });
 }
@@ -488,7 +499,10 @@ function deleteBanner(id) {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = 'action.php?action=delete&PopupID=' + id;
+            document.getElementById('popupActionName').value = 'delete';
+            document.getElementById('popupActionId').value = id;
+            document.getElementById('popupActionIds').value = '';
+            document.getElementById('popupActionForm').submit();
         }
     });
 }
