@@ -1,6 +1,7 @@
 <?php
 $pageTitle = "กลุ่มผู้ใช้งาน";
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 ?>
 
 <!-- Summary Badges -->
@@ -80,6 +81,13 @@ include_once('../includes/header.php');
     <span class="text-sm text-gray-500 ml-2" id="bulkCountText"></span>
 </div>
 <?php endif; ?>
+
+<form id="staffGroupActionForm" action="action.php" method="POST" class="hidden">
+    <?php echo bofSecurityCsrfField(); ?>
+    <input type="hidden" name="action" id="staffGroupActionName" value="">
+    <input type="hidden" name="id" id="staffGroupActionId" value="">
+    <input type="hidden" name="ids" id="staffGroupActionIds" value="">
+</form>
 
 <div class="glass-panel p-6">
     <div class="flex justify-between items-center mb-6">
@@ -245,7 +253,10 @@ function executeBulkAction() {
     }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'action.php?action=' + actionStr + '&ids=' + ids;
+            document.getElementById('staffGroupActionName').value = actionStr;
+            document.getElementById('staffGroupActionId').value = '';
+            document.getElementById('staffGroupActionIds').value = ids;
+            document.getElementById('staffGroupActionForm').submit();
         }
     });
 }
@@ -262,7 +273,10 @@ function confirmDelete(id) {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = 'action.php?action=delete&id=' + id;
+            document.getElementById('staffGroupActionName').value = 'delete';
+            document.getElementById('staffGroupActionId').value = id;
+            document.getElementById('staffGroupActionIds').value = '';
+            document.getElementById('staffGroupActionForm').submit();
         }
     });
 }

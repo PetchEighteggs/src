@@ -1,6 +1,7 @@
 <?php
 $pageTitle = "ฟอร์มข้อมูลกลุ่มผู้ใช้งาน";
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $id = mosGetParam($_FORM, 'id', '');
 $row = [
@@ -30,6 +31,7 @@ if ($id != '') {
 
 <div class="glass-panel p-6">
     <form action="action.php" method="POST" id="mainForm" onsubmit="showLoading()">
+        <?php echo bofSecurityCsrfField(); ?>
         <div class="flex items-center gap-4 mb-6 pb-4 border-b border-gray-100">
             <a href="index.php" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">
                 <i class="ph ph-arrow-left text-xl"></i>
