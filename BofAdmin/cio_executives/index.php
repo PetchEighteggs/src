@@ -6,6 +6,7 @@ if (isset($_GET['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVE
 }
 $pageTitle = 'จัดการผู้บริหารเทคโนโลยีสารสนเทศระดับสูง CIO';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $searchKeyword = $_GET['keyword'] ?? '';
 $searchStatus = $_GET['status'] ?? '';
@@ -126,6 +127,14 @@ try {
         <span class="text-sm text-gray-500 ml-2" id="bulkCountText"></span>
     </div>
     <?php endif; ?>
+
+    <form id="cioExecutiveActionForm" action="action.php" method="POST" class="hidden">
+        <?php echo bofSecurityCsrfField(); ?>
+        <input type="hidden" name="action" id="cioExecutiveActionName" value="">
+        <input type="hidden" name="id" id="cioExecutiveActionId" value="">
+        <input type="hidden" name="ids" id="cioExecutiveActionIds" value="">
+        <input type="hidden" name="status" id="cioExecutiveActionStatus" value="">
+    </form>
 
     <?php if (defined('IS_AJAX')) { ob_clean(); } ?>
     <div id="dataTableContainer" class="space-y-6">
@@ -371,7 +380,11 @@ function executeBulkAction() {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = `action.php?action=bulk_${action}&ids=${ids.join(',')}`;
+            document.getElementById('cioExecutiveActionName').value = `bulk_${action}`;
+            document.getElementById('cioExecutiveActionId').value = '';
+            document.getElementById('cioExecutiveActionIds').value = ids.join(',');
+            document.getElementById('cioExecutiveActionStatus').value = '';
+            document.getElementById('cioExecutiveActionForm').submit();
         }
     });
 }
@@ -388,14 +401,22 @@ function deleteItem(id) {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = `action.php?action=delete&id=${id}`;
+            document.getElementById('cioExecutiveActionName').value = 'delete';
+            document.getElementById('cioExecutiveActionId').value = id;
+            document.getElementById('cioExecutiveActionIds').value = '';
+            document.getElementById('cioExecutiveActionStatus').value = '';
+            document.getElementById('cioExecutiveActionForm').submit();
         }
     });
 }
 
 function toggleStatus(id, currentStatus) {
     const newStatus = currentStatus === 'Y' ? 'N' : 'Y';
-    window.location.href = `action.php?action=toggle_status&id=${id}&status=${newStatus}`;
+    document.getElementById('cioExecutiveActionName').value = 'toggle_status';
+    document.getElementById('cioExecutiveActionId').value = id;
+    document.getElementById('cioExecutiveActionIds').value = '';
+    document.getElementById('cioExecutiveActionStatus').value = newStatus;
+    document.getElementById('cioExecutiveActionForm').submit();
 }
 
 
