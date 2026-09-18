@@ -29,7 +29,9 @@ $config = array();
 /*============================ Enable PHP Connector HERE ==============================*/
 // https://ckeditor.com/docs/ckfinder/ckfinder3-php/configuration.html#configuration_options_authentication
 
-$config['authentication'] = function () {
+$projectRoot = $_Config_absolute_path;
+
+$config['authentication'] = function () use ($projectRoot) {
     if (
         empty($_SESSION['BofAdmin_LoggedIn']) ||
         $_SESSION['BofAdmin_LoggedIn'] !== true ||
@@ -40,9 +42,7 @@ $config['authentication'] = function () {
     }
 
     try {
-        global $_Config_absolute_path;
-
-        require_once $_Config_absolute_path . '/config/ms_com.php';
+        require_once $projectRoot . '/config/ms_com.php';
         $db = mosConnectPDO();
         $stmt = $db->prepare(
             'SELECT StaffID FROM staff
