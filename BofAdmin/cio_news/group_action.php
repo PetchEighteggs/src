@@ -5,17 +5,14 @@ include_once('../../configuration.php');
 include_once('../../config/ms_com.php');
 include_once('../../config/ms.class.php');
 include_once('../../config/func.class.php');
+require_once('../includes/action_security.php');
 
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 $MS = new MS($DB);
 
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    header("Location: ../login.php");
-    exit();
-}
-
 $action = $_REQUEST['action'] ?? '';
-$StaffID = $_SESSION['BofAdmin_StaffID'] ?? 1;
+$StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 $CreateIP = $_SERVER['REMOTE_ADDR'];
 
 try {

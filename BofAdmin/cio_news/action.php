@@ -5,13 +5,11 @@ include_once('../../configuration.php');
 include_once('../../config/ms_com.php');
 include_once('../../config/ms.class.php');
 include_once('../../config/func.class.php'); 
+require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 $MS = new MS($DB);
-
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    header("Location: ../login.php");
-    exit;
-}
+$StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -52,11 +50,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([
                 $cioId, $_POST['Title_TH'] ?? '', $_POST['Title_EN'] ?? '', 
                 $_POST['Content_TH'] ?? '', $_POST['Content_EN'] ?? '',
-                $coverPath, $publishDate, $isActive, $_SESSION['BofAdmin_StaffID'] ?? 1, $_SERVER['REMOTE_ADDR']
+                $coverPath, $publishDate, $isActive, $StaffID, $_SERVER['REMOTE_ADDR']
             ]);
             $newId = $DB->lastInsertId();
             
-            $MS->StaffLog('เพิ่มข่าวสาร CIO', $_SERVER['REQUEST_URI'], $_SESSION['BofAdmin_StaffID'] ?? 1, 3, 7, $newId);
+            $MS->StaffLog('เพิ่มข่าวสาร CIO', $_SERVER['REQUEST_URI'], $StaffID, 3, 7, $newId);
             header("Location: index.php");
             exit;
         } catch (PDOException $e) { die("Error: " . $e->getMessage()); }
@@ -98,10 +96,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([
                 $cioId, $_POST['Title_TH'] ?? '', $_POST['Title_EN'] ?? '', 
                 $_POST['Content_TH'] ?? '', $_POST['Content_EN'] ?? '',
-                $coverPath, $publishDate, $isActive, $_SESSION['BofAdmin_StaffID'] ?? 1, $_SERVER['REMOTE_ADDR'], $id
+                $coverPath, $publishDate, $isActive, $StaffID, $_SERVER['REMOTE_ADDR'], $id
             ]);
             
-            $MS->StaffLog('แก้ไขข่าวสาร CIO', $_SERVER['REQUEST_URI'], $_SESSION['BofAdmin_StaffID'] ?? 1, 3, 7, $id);
+            $MS->StaffLog('แก้ไขข่าวสาร CIO', $_SERVER['REQUEST_URI'], $StaffID, 3, 7, $id);
             header("Location: index.php");
             exit;
         } catch (PDOException $e) { die("Error: " . $e->getMessage()); }
@@ -124,9 +122,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $stmt = $DB->prepare("UPDATE cio_news SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE NewsID=?");
-        $stmt->execute([$_SESSION['BofAdmin_StaffID'] ?? 1, $_SERVER['REMOTE_ADDR'], $id]);
+        $stmt->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $id]);
         
-        $MS->StaffLog('ลบข่าวสาร CIO', $_SERVER['REQUEST_URI'], $_SESSION['BofAdmin_StaffID'] ?? 1, 3, 7, $id);
+        $MS->StaffLog('ลบข่าวสาร CIO', $_SERVER['REQUEST_URI'], $StaffID, 3, 7, $id);
         header("Location: index.php");
         exit;
     } catch (PDOException $e) {
@@ -154,12 +152,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
 
-                $params = array_merge([$_SESSION['BofAdmin_StaffID'] ?? 1, $_SERVER['REMOTE_ADDR']], $idArray);
+                $params = array_merge([$StaffID, $_SERVER['REMOTE_ADDR']], $idArray);
                 
                 $stmt = $DB->prepare("UPDATE cio_news SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE NewsID IN ($placeholders)");
                 $stmt->execute($params);
                 
-                $MS->StaffLog('ลบข่าวสาร CIO', $_SERVER['REQUEST_URI'], $_SESSION['BofAdmin_StaffID'] ?? 1, 3, 7);
+                $MS->StaffLog('ลบข่าวสาร CIO', $_SERVER['REQUEST_URI'], $StaffID, 3, 7);
             }
             header("Location: index.php");
             exit;
@@ -180,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $DB->prepare("UPDATE cio_news SET IsActive=? WHERE NewsID IN ($placeholders)");
                 $stmt->execute($params);
                 
-                $MS->StaffLog('เปลี่ยนสถานะข่าวสาร CIO', $_SERVER['REQUEST_URI'], $_SESSION['BofAdmin_StaffID'] ?? 1, 3, 7);
+                $MS->StaffLog('เปลี่ยนสถานะข่าวสาร CIO', $_SERVER['REQUEST_URI'], $StaffID, 3, 7);
             }
             header("Location: index.php");
             exit;
@@ -194,9 +192,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($id) {
         try {
             $stmt = $DB->prepare("UPDATE cio_news SET IsActive=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE NewsID=?");
-            $stmt->execute([$status, $_SESSION['BofAdmin_StaffID'] ?? 1, $_SERVER['REMOTE_ADDR'], $id]);
+            $stmt->execute([$status, $StaffID, $_SERVER['REMOTE_ADDR'], $id]);
             
-            $MS->StaffLog('เปลี่ยนสถานะข่าวสาร CIO', $_SERVER['REQUEST_URI'], $_SESSION['BofAdmin_StaffID'] ?? 1, 3, 7, $id);
+            $MS->StaffLog('เปลี่ยนสถานะข่าวสาร CIO', $_SERVER['REQUEST_URI'], $StaffID, 3, 7, $id);
             header("Location: index.php");
             exit;
         } catch (PDOException $e) {
