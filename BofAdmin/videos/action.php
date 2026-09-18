@@ -5,13 +5,11 @@ include_once('../../configuration.php');
 include_once('../../config/ms_com.php');
 include_once('../../config/ms.class.php');
 include_once('../../config/func.class.php');
+require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 $MS = new MS($DB);
-
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    header("Location: ../login.php");
-    exit;
-}
+$StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
 // Auto-check and add URLTH, URLEN & CoverImage columns if not exist
 try {
@@ -118,9 +116,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([
                     $groupID, $titleTH, $titleEN, $descTH, $descEN,
                     $youtubeURLTH, $youtubeURLEN, $startDate, $endDate, $coverPath, $isActive, $orderNo,
-                    $_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR'], $docID
+                    $StaffID, $_SERVER['REMOTE_ADDR'], $docID
                 ]);
-                $MS->StaffLog('แก้ไขวีดิทัศน์', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 7, $docID);
+                $MS->StaffLog('แก้ไขวีดิทัศน์', $_SERVER['REQUEST_URI'], $StaffID, 3, 7, $docID);
             } else {
                 if (empty($orderNo)) {
                     $stmtMax = $DB->prepare("SELECT MAX(OrderNo) FROM videos");
@@ -134,10 +132,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([
                     $groupID, $titleTH, $titleEN, $descTH, $descEN,
                     $youtubeURLTH, $youtubeURLEN, $startDate, $endDate, $coverPath, $isActive, $orderNo,
-                    $_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']
+                    $StaffID, $_SERVER['REMOTE_ADDR']
                 ]);
                 $newId = $DB->lastInsertId();
-                $MS->StaffLog('เพิ่มวีดิทัศน์', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 7, $newId);
+                $MS->StaffLog('เพิ่มวีดิทัศน์', $_SERVER['REQUEST_URI'], $StaffID, 3, 7, $newId);
             }
             header("Location: index.php");
             exit;
@@ -160,8 +158,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $stmt = $DB->prepare("UPDATE videos SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE DocID=?");
-            $stmt->execute([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR'], $id]);
-            $MS->StaffLog('ลบวีดิทัศน์', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 7, $id);
+            $stmt->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $id]);
+            $MS->StaffLog('ลบวีดิทัศน์', $_SERVER['REQUEST_URI'], $StaffID, 3, 7, $id);
             header("Location: index.php");
             exit;
         } catch (PDOException $e) {
@@ -188,10 +186,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
 
-                $params = array_merge([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']], $idArray);
+                $params = array_merge([$StaffID, $_SERVER['REMOTE_ADDR']], $idArray);
                 $stmt = $DB->prepare("UPDATE videos SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE DocID IN ($placeholders)");
                 $stmt->execute($params);
-                $MS->StaffLog('ลบวีดิทัศน์', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 7);
+                $MS->StaffLog('ลบวีดิทัศน์', $_SERVER['REQUEST_URI'], $StaffID, 3, 7);
             }
             header("Location: index.php");
             exit;
@@ -210,7 +208,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $params = array_merge([$status], $idArray);
                 $stmt = $DB->prepare("UPDATE videos SET IsActive=? WHERE DocID IN ($placeholders)");
                 $stmt->execute($params);
-                $MS->StaffLog('เปลี่ยนสถานะวีดิทัศน์', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 7);
+                $MS->StaffLog('เปลี่ยนสถานะวีดิทัศน์', $_SERVER['REQUEST_URI'], $StaffID, 3, 7);
             }
             header("Location: index.php");
             exit;

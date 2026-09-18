@@ -5,17 +5,15 @@ include_once('../../configuration.php');
 include_once('../../config/ms_com.php');
 include_once('../../config/ms.class.php');
 include_once('../../config/func.class.php');
+require_once('../includes/action_security.php');
 
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 $MS = new MS($DB);
+$StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 $sectionStmt = $DB->prepare('SELECT SectionID FROM bof_section WHERE SectionURL = ? LIMIT 1');
 $sectionStmt->execute(['weblinks/index.php']);
 $weblinksSectionId = (int) $sectionStmt->fetchColumn();
-
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    header("Location: ../login.php");
-    exit;
-}
 
 // Auto-check and add soft delete columns if not exist
 try {
@@ -44,8 +42,8 @@ $id = mosGetParam($_FORM, 'id', '');
 
 if ($action === 'delete' && $id != '') {
     $stmt = $DB->prepare("UPDATE weblinks_groups SET DelData = 'Y', DelDataDate = NOW(), DelDataBy = ?, DelDataIP = ? WHERE GroupID = ?");
-    $stmt->execute([$_SESSION['BofAdmin_StaffID'] ?? $_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR'], $id]);
-    $MS->StaffLog('ลบหมวดหมู่เว็บลิ้งค์', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, $weblinksSectionId, $id);
+    $stmt->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $id]);
+    $MS->StaffLog('ลบหมวดหมู่เว็บลิ้งค์', $_SERVER['REQUEST_URI'], $StaffID, 3, $weblinksSectionId, $id);
     $_SESSION['sys_msg'] = "ลบข้อมูลสำเร็จ";
     header("Location: group.php");
     exit;
@@ -55,10 +53,10 @@ if ($action === 'delete' && $id != '') {
         $idArray = array_filter(explode(',', $ids), 'is_numeric');
         if (!empty($idArray)) {
             $placeholders = implode(',', array_fill(0, count($idArray), '?'));
-            $params = array_merge([$_SESSION['BofAdmin_StaffID'] ?? $_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']], $idArray);
+            $params = array_merge([$StaffID, $_SERVER['REMOTE_ADDR']], $idArray);
             $stmt = $DB->prepare("UPDATE weblinks_groups SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE GroupID IN ($placeholders)");
             $stmt->execute($params);
-            $MS->StaffLog('ลบหมวดหมู่เว็บลิ้งค์', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, $weblinksSectionId);
+            $MS->StaffLog('ลบหมวดหมู่เว็บลิ้งค์', $_SERVER['REQUEST_URI'], $StaffID, 3, $weblinksSectionId);
         }
     }
     header("Location: group.php");
@@ -70,10 +68,10 @@ if ($action === 'delete' && $id != '') {
         if (!empty($idArray)) {
             $status = ($action === 'bulk_active') ? 'Y' : 'N';
             $placeholders = implode(',', array_fill(0, count($idArray), '?'));
-            $params = array_merge([$status, $_SESSION['BofAdmin_StaffID'] ?? $_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']], $idArray);
+            $params = array_merge([$status, $StaffID, $_SERVER['REMOTE_ADDR']], $idArray);
             $stmt = $DB->prepare("UPDATE weblinks_groups SET IsActive=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE GroupID IN ($placeholders)");
             $stmt->execute($params);
-            $MS->StaffLog('เปลี่ยนสถานะหมวดหมู่เว็บลิ้งค์', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, $weblinksSectionId);
+            $MS->StaffLog('เปลี่ยนสถานะหมวดหมู่เว็บลิ้งค์', $_SERVER['REQUEST_URI'], $StaffID, 3, $weblinksSectionId);
         }
     }
     header("Location: group.php");
@@ -90,18 +88,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $DB->prepare("INSERT INTO weblinks_groups (GroupNameTH, GroupNameEN, OrderNo, IsActive, CreateDate, CreateBy, CreateIP, DelData) VALUES (?, ?, ?, ?, NOW(), ?, ?, 'N')");
         $stmt->execute([
             $nameTH, $nameEN, $orderNo, $isActive,
-            $_SESSION['BofAdmin_StaffID'] ?? $_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']
+            $StaffID, $_SERVER['REMOTE_ADDR']
         ]);
         $newId = $DB->lastInsertId();
-        $MS->StaffLog('เพิ่มหมวดหมู่เว็บลิ้งค์', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, $weblinksSectionId, $newId);
+        $MS->StaffLog('เพิ่มหมวดหมู่เว็บลิ้งค์', $_SERVER['REQUEST_URI'], $StaffID, 3, $weblinksSectionId, $newId);
         $_SESSION['sys_msg'] = "เพิ่มข้อมูลสำเร็จ";
     } elseif ($action === 'edit' && $id != '') {
         $stmt = $DB->prepare("UPDATE weblinks_groups SET GroupNameTH = ?, GroupNameEN = ?, OrderNo = ?, IsActive = ?, UpdateDate = NOW(), UpdateBy = ?, UpdateIP = ? WHERE GroupID = ?");
         $stmt->execute([
             $nameTH, $nameEN, $orderNo, $isActive,
-            $_SESSION['BofAdmin_StaffID'] ?? $_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR'], $id
+            $StaffID, $_SERVER['REMOTE_ADDR'], $id
         ]);
-        $MS->StaffLog('แก้ไขหมวดหมู่เว็บลิ้งค์', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, $weblinksSectionId, $id);
+        $MS->StaffLog('แก้ไขหมวดหมู่เว็บลิ้งค์', $_SERVER['REQUEST_URI'], $StaffID, 3, $weblinksSectionId, $id);
         $_SESSION['sys_msg'] = "แก้ไขข้อมูลสำเร็จ";
     }
 
