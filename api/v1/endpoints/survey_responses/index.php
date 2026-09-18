@@ -124,11 +124,11 @@ try {
         ]);
     }
 } catch (Exception $e) {
+    error_log('Survey responses endpoint failed: ' . $e->getMessage());
     http_response_code(500);
     echo json_encode([
         'status' => 'error',
         'code' => 500,
-        'message' => 'Database error',
-        'debug' => $e->getMessage()
+        'message' => 'Database error'
     ]);
 }

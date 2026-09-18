@@ -5,6 +5,7 @@ require_once '../../helper.php';
 $slug = $_GET['slug'] ?? '';
 $dept_id = (int)($_GET['dept_id'] ?? 0);
 $group_id = (int)($_GET['group_id'] ?? 0);
+$uploadedPath = null;
 
 $input = json_decode(file_get_contents('php://input'), true) ?? $_POST;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -13,15 +14,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 try {
-    if (!empty($slug) && $dept_id === 0) {
-        $stmtDept = $DB->prepare("SELECT DeptID FROM microsite_departments WHERE Slug = ? LIMIT 1");
+    // Resolve the canonical slug from the database. A client-supplied slug is
+    // never used directly as part of an upload path.
+    if (!empty($slug)) {
+        $stmtDept = $DB->prepare("SELECT DeptID, Slug FROM microsite_departments WHERE Slug = ? LIMIT 1");
         $stmtDept->execute([$slug]);
-        $dept_id = $stmtDept->fetchColumn();
-    }
-
-    if ($dept_id === 0 || $dept_id === false) {
+    } elseif ($dept_id > 0) {
+        $stmtDept = $DB->prepare("SELECT DeptID, Slug FROM microsite_departments WHERE DeptID = ? LIMIT 1");
+        $stmtDept->execute([$dept_id]);
+    } else {
         sendError('Valid Department ID or Slug is required', 400);
     }
+
+    $department = $stmtDept->fetch(PDO::FETCH_ASSOC);
+    if (!$department || ($dept_id > 0 && (int)$department['DeptID'] !== $dept_id)) {
+        sendError('Valid Department ID or Slug is required', 400);
+    }
+
+    $dept_id = (int)$department['DeptID'];
+    $slug = (string)$department['Slug'];
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
@@ -42,33 +53,47 @@ try {
         $fileName = '';
         
         // Handle file upload
-        if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
+        if (isset($_FILES['file']) && $_FILES['file']['error'] !== UPLOAD_ERR_NO_FILE) {
             $file = $_FILES['file'];
             $maxSize = 5 * 1024 * 1024; // 5 MB
-            
-            if ($file['size'] > $maxSize) {
+
+            if ($file['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
+                sendError('Invalid file upload', 400);
+            }
+
+            if ($file['size'] <= 0 || $file['size'] > $maxSize) {
                 sendError('File size exceeds the 5MB limit', 400);
             }
-            
+
             $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-            $allowedImageExts = ['jpg', 'jpeg', 'png'];
-            $allowedFileExts = ['pdf', 'doc', 'docx'];
-            $allowedExts = array_merge($allowedImageExts, $allowedFileExts);
-            
-            if (!in_array($ext, $allowedExts)) {
-                sendError('Invalid file extension', 400);
+            $allowedTypes = [
+                'jpg' => ['image/jpeg'],
+                'jpeg' => ['image/jpeg'],
+                'png' => ['image/png'],
+                'pdf' => ['application/pdf'],
+                'doc' => ['application/msword', 'application/CDFV2'],
+                'docx' => [
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'application/zip'
+                ]
+            ];
+
+            $fileInfo = new finfo(FILEINFO_MIME_TYPE);
+            $mimeType = $fileInfo->file($file['tmp_name']);
+            if (!isset($allowedTypes[$ext]) || !in_array($mimeType, $allowedTypes[$ext], true)) {
+                sendError('Invalid file type', 400);
             }
-            
+
             $fileName = date('ymdHis') . strtolower(FU::makeRandom()) . '.' . $ext;
-            
-            if (in_array($ext, $allowedImageExts)) {
+
+            if (in_array($ext, ['jpg', 'jpeg', 'png'], true)) {
                 $uploadDir = $basePath . 'uploads/images/microsite/' . $slug . '/contact/';
             } else {
                 $uploadDir = $basePath . 'uploads/files/microsite/' . $slug . '/contact/';
             }
-            
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
+
+            if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
+                sendError('Failed to prepare upload directory', 500);
             }
             
             $destination = $uploadDir . $fileName;
@@ -76,6 +101,7 @@ try {
             if (!move_uploaded_file($file['tmp_name'], $destination)) {
                 sendError('Failed to save uploaded file', 500);
             }
+            $uploadedPath = $destination;
         }
         
         $DB->beginTransaction();
@@ -170,6 +196,13 @@ try {
 
     sendResponse($result, 200, "Contacts retrieved successfully");
 
-} catch (PDOException $e) {
-    sendError('Database error: ' . $e->getMessage(), 500);
+} catch (Throwable $e) {
+    if (isset($DB) && $DB instanceof PDO && $DB->inTransaction()) {
+        $DB->rollBack();
+    }
+    if ($uploadedPath !== null && is_file($uploadedPath)) {
+        @unlink($uploadedPath);
+    }
+    error_log('Microsite contact endpoint failed: ' . $e->getMessage());
+    sendError('Database error', 500);
 }

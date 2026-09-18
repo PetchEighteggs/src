@@ -1,5 +1,5 @@
 <?php
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
 error_reporting(E_ALL);
 // อนุญาตให้เข้าถึงข้ามโดเมนได้ (CORS) สำหรับ Frontend React
 header("Access-Control-Allow-Origin: *");
@@ -161,7 +161,9 @@ $jsonOutput = json_encode($baseData, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT 
 
 if ($jsonOutput === false) {
     // ถ้าเข้ารหัส JSON ไม่สำเร็จ ให้ดีบักปัญหา
-    echo json_encode(["error" => "json_encode error: " . json_last_error_msg()]);
+    error_log('Welldata JSON encoding failed: ' . json_last_error_msg());
+    http_response_code(500);
+    echo json_encode(["error" => "Unable to encode response"]);
     exit;
 }
 

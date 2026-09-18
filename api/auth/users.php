@@ -16,6 +16,8 @@ try {
         "data" => $users
     ]);
 } catch(PDOException $e) {
-    echo json_encode(["status" => "error", "message" => "ไม่สามารถดึงข้อมูลได้: " . $e->getMessage()]);
+    error_log('Auth users endpoint failed: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(["status" => "error", "message" => "ไม่สามารถดึงข้อมูลได้"]);
 }
 ?>

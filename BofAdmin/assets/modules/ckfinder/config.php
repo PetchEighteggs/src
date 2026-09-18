@@ -1,4 +1,8 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once( "../../../../../../../configuration.php" );
 /*
  * CKFinder Configuration File
@@ -26,8 +30,35 @@ $config = array();
 // https://ckeditor.com/docs/ckfinder/ckfinder3-php/configuration.html#configuration_options_authentication
 
 $config['authentication'] = function () {
-    // return false;
-    return true;
+    if (
+        empty($_SESSION['BofAdmin_LoggedIn']) ||
+        $_SESSION['BofAdmin_LoggedIn'] !== true ||
+        empty($_SESSION['StaffID']) ||
+        empty($_SESSION['StaffToken'])
+    ) {
+        return false;
+    }
+
+    try {
+        global $_Config_absolute_path;
+
+        require_once $_Config_absolute_path . '/config/ms_com.php';
+        $db = mosConnectPDO();
+        $stmt = $db->prepare(
+            'SELECT StaffID FROM staff
+             WHERE StaffID = ? AND StaffToken = ? AND StaffTokenEXP > NOW()
+             LIMIT 1'
+        );
+        $stmt->execute([
+            (int)$_SESSION['StaffID'],
+            (string)$_SESSION['StaffToken']
+        ]);
+
+        return (bool)$stmt->fetchColumn();
+    } catch (Throwable $e) {
+        error_log('CKFinder authentication failed: ' . $e->getMessage());
+        return false;
+    }
 };
 
 /*============================ License Key ============================================*/
@@ -74,7 +105,7 @@ $config['backends'][] = array(
     'adapter'      => 'local',
     'baseUrl'      => $_Config_live_site."/uploads/userfiles/images/",
     'root'         => $_Config_absolute_path."/uploads/userfiles/images/",
-    'chmodFiles'   => 0777,
+    'chmodFiles'   => 0644,
     'chmodFolders' => 0755,
     'filesystemEncoding' => 'UTF-8',
 );
@@ -87,7 +118,7 @@ $config['defaultResourceTypes'] = '';
 $config['resourceTypes'][] = array(
     'name'              => 'Files', // Single quotes not allowed.
     'directory'         => 'files',
-    'maxSize'           => 0,
+    'maxSize'           => '20M',
     'allowedExtensions' => '7z,aiff,asf,avi,bmp,csv,doc,docx,fla,flv,gif,gz,gzip,jpeg,jpg,mid,mov,mp3,mp4,mpc,mpeg,mpg,ods,odt,pdf,png,ppt,pptx,qt,ram,rar,rm,rmi,rmvb,rtf,sdc,swf,sxc,sxw,tar,tgz,tif,tiff,txt,vsd,wav,webp,wma,wmv,xls,xlsx,zip',
     'deniedExtensions'  => '',
     'backend'           => 'default'
@@ -96,7 +127,7 @@ $config['resourceTypes'][] = array(
 $config['resourceTypes'][] = array(
     'name'              => 'Images',
     'directory'         => 'images',
-    'maxSize'           => 0,
+    'maxSize'           => '10M',
     'allowedExtensions' => 'bmp,gif,jpeg,jpg,png,webp',
     'deniedExtensions'  => '',
     'backend'           => 'default'
@@ -133,7 +164,7 @@ $config['accessControl'][] = array(
 
 $config['overwriteOnUpload'] = false;
 $config['checkDoubleExtension'] = true;
-$config['disallowUnsafeCharacters'] = false;
+$config['disallowUnsafeCharacters'] = true;
 $config['secureImageUploads'] = true;
 $config['checkSizeAfterScaling'] = true;
 $config['htmlExtensions'] = array('html', 'htm', 'xml', 'js');
