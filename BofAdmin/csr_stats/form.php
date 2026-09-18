@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'ข้อมูลสถิติ CSR';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $statId = max(0, (int)mosGetParam($_GET, 'StatID', 0));
 $stat = [
@@ -24,6 +25,7 @@ if ($statId > 0) {
 
 <div class="glass-panel p-6">
     <form action="action.php" method="post" id="statForm" onsubmit="showLoading()">
+        <?php echo bofSecurityCsrfField(); ?>
         <input type="hidden" name="action" value="<?php echo $statId > 0 ? 'update' : 'create'; ?>">
         <input type="hidden" name="StatID" value="<?php echo $statId; ?>">
 

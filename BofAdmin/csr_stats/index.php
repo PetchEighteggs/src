@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดการข้อมูลสถิติ CSR';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $search = trim((string)mosGetParam($_GET, 'search', ''));
 $status = (string)mosGetParam($_GET, 'status', '');
@@ -123,6 +124,7 @@ document.addEventListener('DOMContentLoaded', function () {
     </div>
     
     <form action="action.php" method="post" id="configForm" onsubmit="showLoading()" class="hidden">
+        <?php echo bofSecurityCsrfField(); ?>
         <input type="hidden" name="action" value="update_config">
         <div class="space-y-6 mb-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -216,6 +218,12 @@ document.addEventListener('DOMContentLoaded', function () {
     </div>
 </div>
 
+<form action="action.php" method="post" id="deleteStatForm" class="hidden">
+    <?php echo bofSecurityCsrfField(); ?>
+    <input type="hidden" name="action" value="delete">
+    <input type="hidden" name="StatID" id="deleteStatId" value="">
+</form>
+
 <script>
 function toggleConfigEdit() {
     const viewMode = document.getElementById('configViewMode');
@@ -235,7 +243,10 @@ function toggleConfigEdit() {
 
 function removeStat(id) {
     AdminDialog.fire({title:'ยืนยันการลบ?', text:'รายการจะถูกซ่อนด้วย Soft delete และไม่ถูกลบออกจากฐานข้อมูล', icon:'warning', showCancelButton:true, confirmButtonColor:'#dc2626', confirmButtonText:'ยืนยันการลบ', cancelButtonText:'ยกเลิก'}).then(result => {
-        if (result.isConfirmed) window.location.href = `action.php?action=delete&StatID=${id}`;
+        if (result.isConfirmed) {
+            document.getElementById('deleteStatId').value = id;
+            document.getElementById('deleteStatForm').submit();
+        }
     });
 }
 </script>

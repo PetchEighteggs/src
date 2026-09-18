@@ -11,9 +11,11 @@ require_once('../includes/action_security.php');
 
 $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 
-$action = (string)mosGetParam($_REQUEST, 'action', '');
+$action = (string)mosGetParam($_POST, 'action', '');
 $adminId = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 $ip = $_SERVER['REMOTE_ADDR'] ?? '';
 $now = date('Y-m-d H:i:s');
@@ -115,7 +117,7 @@ try {
         exit;
     }
     elseif ($action === 'delete') {
-        $statId = (int)mosGetParam($_GET, 'StatID', 0);
+        $statId = (int)mosGetParam($_POST, 'StatID', 0);
         if ($statId > 0) {
             $delStmt = $DB->prepare("UPDATE csr_stats SET 
                 DelData='Y', DelDataDate=?, DelDataBy=?, DelDataIP=? 
