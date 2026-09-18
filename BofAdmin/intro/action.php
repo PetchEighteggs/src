@@ -13,22 +13,21 @@ require_once('../includes/action_security.php');
 
 $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 $StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
-$action = mosGetParam($_FORM, 'action', '');
-$id = mosGetParam($_FORM, 'IntroID', '');
-if ($id == '' && isset($_GET['IntroID'])) {
-    $id = mosGetParam($_GET, 'IntroID', '');
-}
+$action = mosGetParam($_POST, 'action', '');
+$id = mosGetParam($_POST, 'IntroID', '');
 
-$Title = mosGetParam($_FORM, 'Title', '');
-$TitleEN = mosGetParam($_FORM, 'TitleEN', '');
+$Title = mosGetParam($_POST, 'Title', '');
+$TitleEN = mosGetParam($_POST, 'TitleEN', '');
 
-$OrderNo = mosGetParam($_FORM, 'OrderNo', 1);
-$IsActive = mosGetParam($_FORM, 'IsActive', 'Y');
-$PublishStart = mosGetParam($_FORM, 'PublishStart', null);
-$PublishEnd = mosGetParam($_FORM, 'PublishEnd', null);
+$OrderNo = mosGetParam($_POST, 'OrderNo', 1);
+$IsActive = mosGetParam($_POST, 'IsActive', 'Y');
+$PublishStart = mosGetParam($_POST, 'PublishStart', null);
+$PublishEnd = mosGetParam($_POST, 'PublishEnd', null);
 
 if (!empty($PublishStart)) {
     $parts = explode('/', $PublishStart);
@@ -50,7 +49,7 @@ if (!empty($PublishEnd)) {
 
 // Upload main cover image
 $sServerImgDir = $sServerImgDir . 'intro/';
-$delete_main_image = mosGetParam($_FORM, 'delete_main_image', '0');
+$delete_main_image = mosGetParam($_POST, 'delete_main_image', '0');
 $Image = '';
 
 if ($id > 0) {
@@ -108,7 +107,7 @@ try {
         $MS->StaffLog('ลบ Intro', $_SERVER['REQUEST_URI'], $StaffID, 1, 2, $id);
 
     } else if ($action === 'bulk_delete') {
-        $ids = mosGetParam($_FORM, 'ids', '');
+        $ids = mosGetParam($_POST, 'ids', '');
         if (!empty($ids)) {
             $idArray = array_filter(explode(',', $ids), 'is_numeric');
             if (!empty($idArray)) {
@@ -121,7 +120,7 @@ try {
             }
         }
     } else if (in_array($action, ['bulk_active', 'bulk_inactive'])) {
-        $ids = mosGetParam($_FORM, 'ids', '');
+        $ids = mosGetParam($_POST, 'ids', '');
         if (!empty($ids)) {
             $idArray = array_filter(explode(',', $ids), 'is_numeric');
             if (!empty($idArray)) {
