@@ -11,6 +11,8 @@ require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
 if (!$DB) { echo "DB Connection Failed"; exit; }
 bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 $StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
@@ -122,13 +124,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['sys_msg'] = ['status' => 'error', 'msg' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()];
         }
     }
-    header("Location: index.php");
-    exit;
-} elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
-    $action = $_GET['action'];
+}
+
+if (isset($_POST['action'])) {
+    $action = $_POST['action'];
     
     if ($action === 'delete') {
-        $id = $_GET['id'] ?? null;
+        $id = $_POST['id'] ?? null;
         if ($id) {
             $UserIP = $_SERVER['REMOTE_ADDR'] ?? '';
             $UserID = $StaffID;
@@ -137,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['sys_msg'] = ['status' => 'success', 'msg' => 'ลบข้อมูลสำเร็จ'];
         }
     } elseif ($action === 'bulk_delete') {
-        $ids = $_GET['ids'] ?? '';
+        $ids = $_POST['ids'] ?? '';
         if (!empty($ids)) {
             $idArray = array_filter(explode(',', $ids), 'is_numeric');
             if (!empty($idArray)) {
@@ -151,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     } elseif ($action === 'bulk_active' || $action === 'bulk_inactive') {
-        $ids = $_GET['ids'] ?? '';
+        $ids = $_POST['ids'] ?? '';
         if (!empty($ids)) {
             $idArray = array_filter(explode(',', $ids), 'is_numeric');
             if (!empty($idArray)) {

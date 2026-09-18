@@ -6,6 +6,7 @@ if (isset($_GET['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVE
 }
 $pageTitle = 'จัดการข้อมูลทำเนียบผู้บริหาร';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $searchKeyword = $_GET['keyword'] ?? '';
 $searchStatus = $_GET['status'] ?? '';
@@ -149,6 +150,13 @@ try {
         <span class="text-sm text-gray-500 ml-2" id="bulkCountText"></span>
     </div>
     <?php endif; ?>
+
+    <form id="pastExecutiveActionForm" action="action.php" method="POST" class="hidden">
+        <?php echo bofSecurityCsrfField(); ?>
+        <input type="hidden" name="action" id="pastExecutiveActionName" value="">
+        <input type="hidden" name="id" id="pastExecutiveActionId" value="">
+        <input type="hidden" name="ids" id="pastExecutiveActionIds" value="">
+    </form>
     
     <?php if (defined('IS_AJAX')) { ob_clean(); } ?>
     <div id="pastExecutivesTableContainer" class="space-y-6">
@@ -439,7 +447,10 @@ function executeBulkAction() {
     }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'action.php?action=' + actionStr + '&ids=' + ids;
+            document.getElementById('pastExecutiveActionName').value = actionStr;
+            document.getElementById('pastExecutiveActionId').value = '';
+            document.getElementById('pastExecutiveActionIds').value = ids;
+            document.getElementById('pastExecutiveActionForm').submit();
         }
     });
 }
@@ -456,7 +467,10 @@ function deleteItem(id) {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = `action.php?action=delete&id=${id}`;
+            document.getElementById('pastExecutiveActionName').value = 'delete';
+            document.getElementById('pastExecutiveActionId').value = id;
+            document.getElementById('pastExecutiveActionIds').value = '';
+            document.getElementById('pastExecutiveActionForm').submit();
         }
     });
 }
@@ -474,4 +488,3 @@ function previewImage(src) {
 </script>
 <?php include_once('../includes/history_modal.php'); ?>
 <?php include_once('../includes/footer.php'); ?>
-
