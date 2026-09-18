@@ -1,18 +1,17 @@
 <?php
 define('_VALID_ACCESS', 1);
 session_start();
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    header("Location: ../login.php");
-    exit;
-}
 
 include_once('../../configuration.php');
 include_once('../../config/ms_com.php');
 include_once('../../config/func.class.php');
 include_once('../../config/ms.class.php');
+require_once('../includes/action_security.php');
 
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 $MS = new MS($DB);
+$StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
 $action = mosGetParam($_FORM, 'action', '');
 $id = mosGetParam($_FORM, 'id', '');
@@ -45,7 +44,7 @@ try {
         $newStaffID = $DB->lastInsertId();
         if ($GroupID === 'S' && isset($_POST['accessible_dept']) && !empty($_POST['accessible_dept'])) {
             $insAcc = $DB->prepare("INSERT INTO staff_microsite_access (StaffID, DeptID, CanEdit, CreateDate, CreateBy, CreateIP) VALUES (?, ?, 'Y', NOW(), ?, ?)");
-            $insAcc->execute([$newStaffID, $_POST['accessible_dept'], $_SESSION['StaffID'], $_SERVER['REMOTE_ADDR']]);
+            $insAcc->execute([$newStaffID, $_POST['accessible_dept'], $StaffID, $_SERVER['REMOTE_ADDR']]);
         }
 
         // Save microsite menu permissions
@@ -67,7 +66,7 @@ try {
             }
         }
 
-        $MS->StaffLog('เพิ่มผู้ใช้งานระบบ', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 4, 8, $newStaffID);
+        $MS->StaffLog('เพิ่มผู้ใช้งานระบบ', $_SERVER['REQUEST_URI'], $StaffID, 4, 8, $newStaffID);
 
     } else if ($action == 'edit' && $id != '') {
         if (!empty($Password)) {
@@ -85,7 +84,7 @@ try {
 
         if ($GroupID === 'S' && isset($_POST['accessible_dept']) && !empty($_POST['accessible_dept'])) {
             $insAcc = $DB->prepare("INSERT INTO staff_microsite_access (StaffID, DeptID, CanEdit, CreateDate, CreateBy, CreateIP) VALUES (?, ?, 'Y', NOW(), ?, ?)");
-            $insAcc->execute([$id, $_POST['accessible_dept'], $_SESSION['StaffID'], $_SERVER['REMOTE_ADDR']]);
+            $insAcc->execute([$id, $_POST['accessible_dept'], $StaffID, $_SERVER['REMOTE_ADDR']]);
         }
 
         // Re-save microsite menu permissions (delete old, insert new)
@@ -109,13 +108,13 @@ try {
             }
         }
 
-        $MS->StaffLog('แก้ไขผู้ใช้งานระบบ', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 4, 8, $id);
+        $MS->StaffLog('แก้ไขผู้ใช้งานระบบ', $_SERVER['REQUEST_URI'], $StaffID, 4, 8, $id);
 
     } else if ($action == 'delete' && $id != '') {
         $stmt = $DB->prepare("UPDATE staff SET DelData='Y', DelDataDate=NOW(), DelDataIP=? WHERE StaffID=?");
         $stmt->execute([$_SERVER['REMOTE_ADDR'], $id]);
 
-        $MS->StaffLog('ลบผู้ใช้งานระบบ', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 4, 8, $id);
+        $MS->StaffLog('ลบผู้ใช้งานระบบ', $_SERVER['REQUEST_URI'], $StaffID, 4, 8, $id);
 
     } else if ($action == 'bulk_delete' && isset($_GET['ids'])) {
         $ids = explode(',', $_GET['ids']);
@@ -125,7 +124,7 @@ try {
         foreach($ids as $i) $params[] = $i;
         $stmt->execute($params);
 
-        $MS->StaffLog('ลบผู้ใช้งานระบบ', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 4, 8);
+        $MS->StaffLog('ลบผู้ใช้งานระบบ', $_SERVER['REQUEST_URI'], $StaffID, 4, 8);
         
     } else if ($action == 'bulk_active' && isset($_GET['ids'])) {
         $ids = explode(',', $_GET['ids']);
@@ -135,7 +134,7 @@ try {
         foreach($ids as $i) $params[] = $i;
         $stmt->execute($params);
 
-        $MS->StaffLog('เปลี่ยนสถานะผู้ใช้งานระบบ', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 4, 8);
+        $MS->StaffLog('เปลี่ยนสถานะผู้ใช้งานระบบ', $_SERVER['REQUEST_URI'], $StaffID, 4, 8);
 
     } else if ($action == 'bulk_inactive' && isset($_GET['ids'])) {
         $ids = explode(',', $_GET['ids']);
@@ -145,7 +144,7 @@ try {
         foreach($ids as $i) $params[] = $i;
         $stmt->execute($params);
 
-        $MS->StaffLog('เปลี่ยนสถานะผู้ใช้งานระบบ', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 4, 8);
+        $MS->StaffLog('เปลี่ยนสถานะผู้ใช้งานระบบ', $_SERVER['REQUEST_URI'], $StaffID, 4, 8);
     }
 } catch (PDOException $e) {
     die("Database Error: " . $e->getMessage());

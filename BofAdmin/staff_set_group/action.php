@@ -5,20 +5,19 @@ include_once('../../configuration.php');
 include_once('../../config/ms_com.php');
 include_once('../../config/func.class.php');
 include_once('../../config/ms.class.php');
-
-if (!isset($_SESSION['BofAdmin_LoggedIn'])) {
-    die("Access Denied");
-}
+require_once('../includes/action_security.php');
 
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 $MS = new MS($DB);
+$StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 $action = mosGetParam($_FORM, 'action', '');
 $id = mosGetParam($_FORM, 'id', '');
 
 $SetGroupName = mosGetParam($_FORM, 'SetGroupName', '');
 $SetOrder = 999;
 $Approved = mosGetParam($_FORM, 'Approved', 'Y');
-$currentUserId = $_SESSION['StaffID'] ?? 0;
+$currentUserId = $StaffID;
 $ip = $_SERVER['REMOTE_ADDR'];
 
 try {
@@ -38,7 +37,7 @@ try {
             }
         }
         
-        $MS->StaffLog('เพิ่มกลุ่มผู้ใช้งาน', $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, 4, 11, $setId);
+        $MS->StaffLog('เพิ่มกลุ่มผู้ใช้งาน', $_SERVER['REQUEST_URI'], $StaffID, 4, 11, $setId);
         header("Location: index.php");
         exit;
     } 
@@ -58,7 +57,7 @@ try {
             }
         }
         
-        $MS->StaffLog('แก้ไขกลุ่มผู้ใช้งาน', $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, 4, 11, $id);
+        $MS->StaffLog('แก้ไขกลุ่มผู้ใช้งาน', $_SERVER['REQUEST_URI'], $StaffID, 4, 11, $id);
         header("Location: index.php");
         exit;
     } 
@@ -66,7 +65,7 @@ try {
         $stmt = $DB->prepare("UPDATE staff_set_group SET DelData = 'Y', DelDataDate = NOW(), DelDataBy = ?, DelDataIP = ? WHERE SetGroupID = ?");
         $stmt->execute([$currentUserId, $ip, $id]);
         
-        $MS->StaffLog('ลบกลุ่มผู้ใช้งาน', $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, 4, 11, $id);
+        $MS->StaffLog('ลบกลุ่มผู้ใช้งาน', $_SERVER['REQUEST_URI'], $StaffID, 4, 11, $id);
         header("Location: index.php");
         exit;
     }
@@ -79,7 +78,7 @@ try {
                 $params = array_merge([$currentUserId, $ip], $idArray);
                 $stmt = $DB->prepare("UPDATE staff_set_group SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE SetGroupID IN ($placeholders)");
                 $stmt->execute($params);
-                $MS->StaffLog('ลบกลุ่มผู้ใช้งาน', $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, 4, 11);
+                $MS->StaffLog('ลบกลุ่มผู้ใช้งาน', $_SERVER['REQUEST_URI'], $StaffID, 4, 11);
             }
         }
         header("Location: index.php");
@@ -95,7 +94,7 @@ try {
                 $stmt = $DB->prepare("UPDATE staff_set_group SET Approved=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE SetGroupID IN ($placeholders)");
                 $stmt->execute($params);
                 $logStr = ($action === 'bulk_active') ? 'เปิดใช้งาน' : 'ระงับการใช้งาน';
-                $MS->StaffLog('เปลี่ยนสถานะกลุ่มผู้ใช้งาน', $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, 4, 11);
+                $MS->StaffLog('เปลี่ยนสถานะกลุ่มผู้ใช้งาน', $_SERVER['REQUEST_URI'], $StaffID, 4, 11);
             }
         }
         header("Location: index.php");
