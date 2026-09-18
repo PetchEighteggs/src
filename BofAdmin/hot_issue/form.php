@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = "จัดการ Hot issue";
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 ?>
 <!-- Flatpickr CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -48,6 +49,7 @@ if (!$banner) {
 
 <div class="glass-panel p-6">
     <form action="action.php" method="POST" enctype="multipart/form-data" class="w-full" onsubmit="showLoading()">
+        <?php echo bofSecurityCsrfField(); ?>
         <input type="hidden" name="action" value="<?php echo $id > 0 ? 'update' : 'create'; ?>">
         <input type="hidden" name="IssueID" value="<?php echo $id; ?>">
 

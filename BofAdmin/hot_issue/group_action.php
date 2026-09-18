@@ -7,9 +7,12 @@ require_once('../../config/ms.class.php');
 require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
+$StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
-$action = $_REQUEST['action'] ?? '';
+$action = $_POST['action'] ?? '';
 
 
 
@@ -20,7 +23,7 @@ if ($action == 'save') {
     $nameEN = $_POST['GroupNameEN'] ?? '';
     $isActive = $_POST['IsActive'] ?? 'Y';
     $orderNo = $_POST['OrderNo'] ?? 1;
-    $staffID = $_SESSION['admin_id'] ?? 1;
+    $staffID = $StaffID;
     $ip = $_SERVER['REMOTE_ADDR'];
 
     try {
@@ -32,24 +35,24 @@ if ($action == 'save') {
             $stmt->execute([$nameTH, $nameEN, $orderNo, $isActive, $staffID, $ip]);
         }
         $logAction = (!empty($id) ? 'แก้ไขหมวดหมู่ Hot Issue ID: ' : 'เพิ่มหมวดหมู่ Hot Issue ID: ') . (!empty($id) ? $id : $DB->lastInsertId());
-        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 10, (!empty($id) ? $id : $DB->lastInsertId()));
+        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $StaffID, '', 10, (!empty($id) ? $id : $DB->lastInsertId()));
         echo "<script>window.location.href='group.php';</script>";
     } catch (PDOException $e) {
         echo "<script>alert('Error: " . addslashes($e->getMessage()) . "'); window.history.back();</script>";
     }
 } elseif ($action == 'delete') {
-    $id = $_GET['id'] ?? 0;
+    $id = $_POST['id'] ?? 0;
     try {
         $stmt = $DB->prepare("UPDATE hot_issue_group SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE GroupID=?");
-        $stmt->execute([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR'], $id]);
-        $MS->StaffLog('ลบหมวดหมู่ Hot Issue ID: ' . $id, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 10, $id);
+        $stmt->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $id]);
+        $MS->StaffLog('ลบหมวดหมู่ Hot Issue ID: ' . $id, $_SERVER['REQUEST_URI'], $StaffID, '', 10, $id);
         echo "<script>alert('ลบข้อมูลเรียบร้อยแล้ว'); window.location.href='group.php';</script>";
     } catch (PDOException $e) {
         echo "<script>alert('Error: " . addslashes($e->getMessage()) . "'); window.history.back();</script>";
     }
-} else if (($action === 'bulk_delete' || $action === 'bulk_active' || $action === 'bulk_inactive') && !empty($_GET['ids'])) {
+} else if (($action === 'bulk_delete' || $action === 'bulk_active' || $action === 'bulk_inactive') && !empty($_POST['ids'])) {
     try {
-        $ids = explode(',', $_GET['ids']);
+        $ids = explode(',', $_POST['ids']);
         $validIds = [];
         foreach ($ids as $val) {
             $val = (int)trim($val);
@@ -58,7 +61,7 @@ if ($action == 'save') {
 
         if (!empty($validIds)) {
             $placeholders = implode(',', array_fill(0, count($validIds), '?'));
-            $staffID = $_SESSION['admin_id'] ?? 1;
+            $staffID = $StaffID;
             $ip = $_SERVER['REMOTE_ADDR'];
             
             if ($action === 'bulk_delete') {
@@ -74,7 +77,7 @@ if ($action == 'save') {
             
             $thaiActions = ['bulk_active' => 'เปิดใช้งานหมวดหมู่ Hot Issue แบบกลุ่ม', 'bulk_inactive' => 'ระงับการใช้งานหมวดหมู่ Hot Issue แบบกลุ่ม', 'bulk_delete' => 'ลบหมวดหมู่ Hot Issue แบบกลุ่ม'];
             $logActionStr = $thaiActions[$action] ?? 'เปลี่ยนสถานะหมวดหมู่ Hot Issue แบบกลุ่ม';
-            $MS->StaffLog($logActionStr, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 10);
+            $MS->StaffLog($logActionStr, $_SERVER['REQUEST_URI'], $StaffID, '', 10);
         }
         header("Location: group.php");
         exit;

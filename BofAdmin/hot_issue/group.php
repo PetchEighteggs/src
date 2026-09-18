@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดการหมวดหมู่ Hot issue';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $canAdd = $userPermissions['add'] ?? true;
 $canEdit = $userPermissions['edit'] ?? true;
@@ -60,6 +61,12 @@ try {
 </div>
 
 <div class="glass-panel p-6">
+    <form id="hotIssueGroupActionForm" action="group_action.php" method="POST" class="hidden">
+        <?php echo bofSecurityCsrfField(); ?>
+        <input type="hidden" name="action" id="hotIssueGroupActionName" value="">
+        <input type="hidden" name="id" id="hotIssueGroupActionId" value="">
+        <input type="hidden" name="ids" id="hotIssueGroupActionIds" value="">
+    </form>
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-100">
         <div>
 					<h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -149,7 +156,7 @@ try {
                             </a>
                             <?php endif; ?>
                             <?php if ($canDelete): ?>
-                            <button type="button" onclick="if(confirm('ยืนยันการลบ?')) window.location.href='group_action.php?action=delete&id=<?php echo $item['GroupID']; ?>'" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors" title="ลบ">
+                            <button type="button" onclick="deleteGroup(<?php echo (int)$item['GroupID']; ?>)" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors" title="ลบ">
                                 <i class="ph ph-trash text-lg"></i>
                             </button>
                             <?php endif; ?>
@@ -198,7 +205,30 @@ function executeBulkAction() {
     Swal.fire({ title: confirmText, text: `จำนวน ${checkedBoxes.length} รายการ`, icon: action === 'bulk_delete' ? 'warning' : 'question', showCancelButton: true, confirmButtonColor: action === 'bulk_delete' ? '#d33' : '#3085d6', cancelButtonColor: '#aaa', confirmButtonText: 'ตกลง', cancelButtonText: 'ยกเลิก' }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'group_action.php?action=' + action + '&ids=' + ids;
+            document.getElementById('hotIssueGroupActionName').value = action;
+            document.getElementById('hotIssueGroupActionId').value = '';
+            document.getElementById('hotIssueGroupActionIds').value = ids;
+            document.getElementById('hotIssueGroupActionForm').submit();
+        }
+    });
+}
+
+function deleteGroup(id) {
+    Swal.fire({
+        title: 'ยืนยันการลบ?',
+        text: 'ข้อมูลหมวดหมู่นี้จะถูกลบ',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#aaa',
+        confirmButtonText: 'ยืนยันการลบ',
+        cancelButtonText: 'ยกเลิก'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('hotIssueGroupActionName').value = 'delete';
+            document.getElementById('hotIssueGroupActionId').value = id;
+            document.getElementById('hotIssueGroupActionIds').value = '';
+            document.getElementById('hotIssueGroupActionForm').submit();
         }
     });
 }
