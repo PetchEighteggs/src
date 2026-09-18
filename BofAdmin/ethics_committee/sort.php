@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดเรียงลำดับคณะกรรมการจริยธรรมประจำกรม';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $items = [];
 try {
@@ -68,6 +69,7 @@ try {
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    const csrfToken = <?php echo json_encode(bofSecurityCsrfToken(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     document.addEventListener('DOMContentLoaded', function() {
         const sortableList = document.getElementById('sortableList');
         if (sortableList) {
@@ -100,6 +102,8 @@ try {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-Token': csrfToken,
             },
             body: JSON.stringify({ orderData: orderData })
         })

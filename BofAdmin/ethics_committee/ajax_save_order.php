@@ -2,12 +2,23 @@
 define('_VALID_ACCESS', 1);
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    echo json_encode(['status' => 'error', 'msg' => 'Unauthorized']);
+include_once('../../configuration.php');
+include_once('../../config/ms_com.php');
+include_once('../../config/ms.class.php');
+require_once('../includes/action_security.php');
+
+header('Content-Type: application/json; charset=utf-8');
+
+$DB = mosConnectPDO();
+if (!$DB) {
+    echo json_encode(['status' => 'error', 'msg' => 'Database connection failed']);
     exit;
 }
-
-header('Content-Type: application/json');
+bofSecurityRequireAuth($DB, ['response' => 'json', 'login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST'], ['response' => 'json']);
+bofSecurityRequireCsrf(null, '_csrf_token', ['response' => 'json']);
+$MS = new MS($DB);
+$UserID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
@@ -17,19 +28,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode(['status' => 'error', 'msg' => 'ไม่พบข้อมูลที่ต้องการจัดเรียง']);
         exit;
     }
-
-    include_once('../../configuration.php');
-    include_once('../../config/ms_com.php');
-    include_once('../../config/ms.class.php');
-    
-    $DB = mosConnectPDO();
-    if (!$DB) {
-        echo json_encode(['status' => 'error', 'msg' => 'เชื่อมต่อฐานข้อมูลไม่ได้']);
-        exit;
-    }
-    
-    $MS = new MS($DB);
-    $UserID = $_SESSION['admin_id'] ?? 0;
 
     try {
         $DB->beginTransaction();
@@ -46,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         $DB->commit();
-        $MS->StaffLog('จัดเรียงลำดับคณะกรรมการจริยธรรมประจำกรม', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 7);
+        $MS->StaffLog('จัดเรียงลำดับคณะกรรมการจริยธรรมประจำกรม', $_SERVER['REQUEST_URI'], $UserID, 3, 7);
         echo json_encode(['status' => 'success']);
     } catch (PDOException $e) {
         $DB->rollBack();
