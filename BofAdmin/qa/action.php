@@ -5,13 +5,11 @@ require_once('../../configuration.php');
 require_once('../../config/ms_com.php');
 require_once('../../config/ms.class.php');
 require_once('../../config/func.class.php'); 
+require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 $MS = new MS($DB);
-
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    header("Location: ../login.php");
-    exit;
-}
+$StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
 // Auto-check and add URLTH, URLEN & CoverImage columns if not exist
 try {
@@ -60,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $isActive = $_POST['IsActive'] ?? 'Y';
         $orderNo = isset($_POST['OrderNo']) ? $_POST['OrderNo'] : null;
         
-        $adminId = $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1;
+        $adminId = $StaffID;
         $ip = $_SERVER['REMOTE_ADDR'] ?? '';
         
         // Handle Cover Image
@@ -151,7 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 } elseif (isset($_GET['action'])) {
     $action = $_GET['action'];
-    $adminId = $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1;
+    $adminId = $StaffID;
     $ip = $_SERVER['REMOTE_ADDR'] ?? '';
 
     if ($action === 'delete') {

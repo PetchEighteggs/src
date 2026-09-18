@@ -5,13 +5,11 @@ include_once('../../configuration.php');
 include_once('../../config/ms_com.php');
 include_once('../../config/ms.class.php');
 include_once('../../config/func.class.php'); 
+require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 $MS = new MS($DB);
-
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    header("Location: ../login.php");
-    exit;
-}
+$StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
 $action = $_REQUEST['action'] ?? '';
 
@@ -23,7 +21,7 @@ if ($action === 'save') {
     $isActive = $_POST['IsActive'] ?? 'Y';
     $orderNo = $_POST['OrderNo'] !== '' ? (int)$_POST['OrderNo'] : 0;
     
-    $adminId = $_SESSION['admin_id'] ?? 1;
+    $adminId = $StaffID;
     $ip = $_SERVER['REMOTE_ADDR'];
 
     try {
@@ -69,7 +67,7 @@ if ($action === 'save') {
 } elseif ($action === 'delete') {
     $id = $_GET['id'] ?? 0;
     if ($id > 0) {
-        $adminId = $_SESSION['admin_id'] ?? 1;
+        $adminId = $StaffID;
         $ip = $_SERVER['REMOTE_ADDR'];
         try {
             $stmt = $DB->prepare("UPDATE org_positions SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE PositionID=?");
@@ -90,7 +88,7 @@ if ($action === 'save') {
     if (!empty($ids)) {
         $idArray = array_filter(explode(',', $ids), 'is_numeric');
         if (count($idArray) > 0) {
-            $adminId = $_SESSION['admin_id'] ?? 1;
+            $adminId = $StaffID;
             $ip = $_SERVER['REMOTE_ADDR'];
             $placeholders = implode(',', array_fill(0, count($idArray), '?'));
             

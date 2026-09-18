@@ -5,12 +5,11 @@ include_once('../../configuration.php');
 include_once('../../config/ms_com.php');
 include_once('../../config/ms.class.php');
 include_once('../../config/func.class.php');
+require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 $MS = new MS($DB);
-
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    header("Location: ../login.php"); exit;
-}
+$StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
 $backUrl = "index.php";
 
@@ -62,11 +61,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $endDate,
                 $_POST['IsActive'] ?? 'Y',
                 (int)($_POST['OrderNo'] ?? 0),
-                $_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']
+                $StaffID, $_SERVER['REMOTE_ADDR']
             ]);
             $newId = $DB->lastInsertId();
 
-            $MS->StaffLog('เพิ่มหน่วยงานที่เกี่ยวข้อง', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 107, $newId);
+            $MS->StaffLog('เพิ่มหน่วยงานที่เกี่ยวข้อง', $_SERVER['REQUEST_URI'], $StaffID, 3, 107, $newId);
             header("Location: $backUrl"); exit;
         } catch (PDOException $e) { die("Error: " . $e->getMessage()); }
     }
@@ -104,10 +103,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $endDate,
                 $_POST['IsActive'] ?? 'Y',
                 (int)($_POST['OrderNo'] ?? 0),
-                $_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR'], $id
+                $StaffID, $_SERVER['REMOTE_ADDR'], $id
             ]);
 
-            $MS->StaffLog('แก้ไขหน่วยงานที่เกี่ยวข้อง', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 107, $id);
+            $MS->StaffLog('แก้ไขหน่วยงานที่เกี่ยวข้อง', $_SERVER['REQUEST_URI'], $StaffID, 3, 107, $id);
             header("Location: $backUrl"); exit;
         } catch (PDOException $e) { die("Error: " . $e->getMessage()); }
     }
@@ -121,8 +120,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($id) {
             try {
                 $DB->prepare("UPDATE org_related SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE RelatedID=?")
-                   ->execute([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR'], $id]);
-                $MS->StaffLog('ลบหน่วยงานที่เกี่ยวข้อง', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 107, $id);
+                   ->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $id]);
+                $MS->StaffLog('ลบหน่วยงานที่เกี่ยวข้อง', $_SERVER['REQUEST_URI'], $StaffID, 3, 107, $id);
             } catch (PDOException $e) {}
         }
         header("Location: $backUrl"); exit;
@@ -136,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!empty($idArray)) {
                 try {
                     $placeholders = implode(',', array_fill(0, count($idArray), '?'));
-                    $params = array_merge([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']], array_values($idArray));
+                    $params = array_merge([$StaffID, $_SERVER['REMOTE_ADDR']], array_values($idArray));
                     $DB->prepare("UPDATE org_related SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE RelatedID IN ($placeholders)")
                        ->execute($params);
                 } catch (PDOException $e) {}
