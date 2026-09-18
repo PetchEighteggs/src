@@ -4,16 +4,13 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (empty($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    header('Location: ../login.php');
-    exit;
-}
-
 include_once('../../configuration.php');
 include_once('../../config/ms_com.php');
 include_once('../../config/ms.class.php');
+require_once('../includes/action_security.php');
 
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 $MS = new MS($DB);
 $staffId = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 $staffIp = $_SERVER['REMOTE_ADDR'] ?? '';

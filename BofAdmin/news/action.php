@@ -5,19 +5,17 @@ include_once('../../configuration.php');
 include_once('../../config/ms_com.php');
 include_once('../../config/ms.class.php');
 include_once('../../config/func.class.php'); 
+require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 $MS = new MS($DB);
-
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-  header("Location: ../login.php");
-  exit;
-}
+$StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     function uploadMultipleFiles($filesArray, $uploadDir, $dbUploadDir, $newsId, $db, $table, $pathCol, $isAttachment = false) {
-        global $_Config, $SetMaxSize, $SetFileSize;
+        global $_Config, $SetMaxSize, $SetFileSize, $StaffID;
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
         
         $count = is_array($filesArray['name']) ? count($filesArray['name']) : 0;
@@ -41,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 											if ($table === 'news_attachments') {
 													$ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
 													$stmt = $db->prepare("INSERT INTO $table (NewsID, FileName_TH, $pathCol, FileType, FileSize, OrderNo, CreateDate, CreateBy, CreateIP, DelData) VALUES (?, ?, ?, ?, ?, 9999, NOW(), ?, ?, 'N')");
-													$stmt->execute([$newsId, $fileName, $dbPath, $ext, $singleFile['size'], $_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']]);
+											$stmt->execute([$newsId, $fileName, $dbPath, $ext, $singleFile['size'], $StaffID, $_SERVER['REMOTE_ADDR']]);
 											} else {
 													$stmt = $db->prepare("INSERT INTO $table (NewsID, FileName_TH, $pathCol, OrderNo) VALUES (?, ?, ?, 9999)");
 													$stmt->execute([$newsId, $fileName, $dbPath]);
@@ -99,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (isset($_FILES['Gallery'])) uploadMultipleFiles($_FILES['Gallery'], $sServerImgDir . 'news/gallery/', '', $newId, $DB, 'news_gallery', 'ImagePath', false);
             if (isset($_FILES['Attachments'])) uploadMultipleFiles($_FILES['Attachments'], $sServerDirFile . 'news/', '', $newId, $DB, 'news_attachments', 'FilePath', true);
 
-            $MS->StaffLog('เพิ่มข่าวสาร', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 7, $newId);
+            $MS->StaffLog('เพิ่มข่าวสาร', $_SERVER['REQUEST_URI'], $StaffID, 3, 7, $newId);
             header("Location: index.php");
             exit;
         } catch (PDOException $e) { die("Error: " . $e->getMessage()); }
@@ -156,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$aid]);
                 if ($row = $stmt->fetch()) {
                   if (file_exists($sServerDirFile . 'news/' . $row['FilePath'])) unlink($sServerDirFile . 'news/' . $row['FilePath']);
-                  $DB->prepare("UPDATE news_attachments SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE AttachmentID = ?")->execute([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR'], $aid]);
+                  $DB->prepare("UPDATE news_attachments SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE AttachmentID = ?")->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $aid]);
                 }
             }
         }
@@ -204,7 +202,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            $MS->StaffLog('แก้ไขข่าวสาร', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 7, $id);
+            $MS->StaffLog('แก้ไขข่าวสาร', $_SERVER['REQUEST_URI'], $StaffID, 3, 7, $id);
             header("Location: index.php");
             exit;
         } catch (PDOException $e) { die("Error: " . $e->getMessage()); }
@@ -213,18 +211,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = $_GET['id'];
     try {
         $stmt = $DB->prepare("UPDATE news SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE NewsID=?");
-        $stmt->execute([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR'], $id]);
+        $stmt->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $id]);
         
         // Update attachments and gallery
         try { 
             $stmtAtt = $DB->prepare("SELECT FilePath FROM news_attachments WHERE NewsID=?");
             $stmtAtt->execute([$id]);
-            $DB->prepare("UPDATE news_attachments SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE NewsID=?")->execute([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR'], $id]); 
+            $DB->prepare("UPDATE news_attachments SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE NewsID=?")->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $id]);
         } catch(PDOException $e) {}
         try { $DB->prepare("UPDATE news_gallery SET DelData='Y' WHERE NewsID=?")->execute([$id]); } catch(PDOException $e) {}
         
         // Log function helper (inline since we are in GET)
-        $MS->StaffLog('ลบข่าวสาร', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 7, $id);
+        $MS->StaffLog('ลบข่าวสาร', $_SERVER['REQUEST_URI'], $StaffID, 3, 7, $id);
         
         header("Location: index.php");
         exit;
@@ -238,7 +236,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $idArray = array_filter(explode(',', $ids), 'is_numeric');
             if (!empty($idArray)) {
                 $placeholders = implode(',', array_fill(0, count($idArray), '?'));
-                $params = array_merge([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']], $idArray);
+                $params = array_merge([$StaffID, $_SERVER['REMOTE_ADDR']], $idArray);
                 
                 $stmt = $DB->prepare("UPDATE news SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE NewsID IN ($placeholders)");
                 $stmt->execute($params);
@@ -252,7 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try { $DB->prepare("UPDATE news_gallery SET DelData='Y' WHERE NewsID IN ($placeholders)")->execute($idArray); } catch(PDOException $e) {}
                 
                 // Log function helper
-                $MS->StaffLog('ลบข่าวสาร', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 7);
+                $MS->StaffLog('ลบข่าวสาร', $_SERVER['REQUEST_URI'], $StaffID, 3, 7);
             }
             header("Location: index.php");
             exit;
@@ -274,7 +272,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute($params);
                 
                 // Log function helper
-                $MS->StaffLog('เปลี่ยนสถานะข่าวสาร', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 7);
+                $MS->StaffLog('เปลี่ยนสถานะข่าวสาร', $_SERVER['REQUEST_URI'], $StaffID, 3, 7);
             }
             header("Location: index.php");
             exit;

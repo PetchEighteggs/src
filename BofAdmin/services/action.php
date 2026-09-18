@@ -4,16 +4,13 @@ session_start();
 require_once('../../configuration.php');
 require_once('../../config/ms_com.php');
 require_once('../../config/ms.class.php');
+require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 $MS = new MS($DB);
+$StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
 $action = $_REQUEST['action'] ?? '';
-
-// Verify Access
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    header("Location: ../login.php");
-    exit;
-}
 
 $uploadDir = $sServerDirFile . "services/";
 if (!is_dir($uploadDir)) {
@@ -156,7 +153,7 @@ if ($action == 'save') {
                     $newName = "dl_" . time() . "_" . uniqid() . "." . $ext;
                     if (move_uploaded_file($_FILES['UploadFiles']['tmp_name'][$i], $uploadDir . $newName)) {
                         $stmtAtt = $DB->prepare("INSERT INTO service_doc_attachments (DocID, FilePath, FileType, FileSize, Downloads, OrderNo, CreateDate, CreateBy, CreateIP, DelData) VALUES (?, ?, ?, ?, 0, 0, NOW(), ?, ?, 'N')");
-                        $stmtAtt->execute([$docIDToUse, $newName, $ext, $size, $_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']]);
+                        $stmtAtt->execute([$docIDToUse, $newName, $ext, $size, $StaffID, $_SERVER['REMOTE_ADDR']]);
                     }
                 }
             }
@@ -165,7 +162,7 @@ if ($action == 'save') {
         $moduleNames = ['infographic' => 'สื่อประชาสัมพันธ์', 'situation' => 'สถานการณ์น้ำบาดาล', 'reports' => 'รายงานเกี่ยวกับน้ำบาดาล', 'mou' => 'บันทึกความเข้าใจ', 'laws' => 'กฎหมายน้ำบาดาล', 'downloads' => 'สื่อดาวน์โหลด', 'standards' => 'มาตรฐานและราคากลางการเจาะน้ำบาดาล', 'manuals' => 'คู่มือสำหรับประชาชน'];
         $moduleName = $moduleNames[$serviceType] ?? 'ข้อมูลบริการ';
         $logAction = ($downloadID > 0 ? 'แก้ไข' : 'เพิ่ม') . $moduleName . ' ID: ' . $docIDToUse;
-        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 10, ($downloadID > 0 ? $downloadID : $DB->lastInsertId()));
+        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $StaffID, '', 10, ($downloadID > 0 ? $downloadID : $DB->lastInsertId()));
         header("Location: index.php?type=".urlencode($serviceType));
         exit;
     } catch (PDOException $e) {
@@ -177,13 +174,13 @@ if ($action == 'save') {
     $serviceType = $_GET['type'] ?? 'situation';
     if ($id > 0) {
         try {
-            $DB->prepare("UPDATE service_doc_attachments SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE DocID = ?")->execute([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR'], $id]);
+            $DB->prepare("UPDATE service_doc_attachments SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE DocID = ?")->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $id]);
             
             $stmt = $DB->prepare("UPDATE service_docs SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE DocID = ?");
-            $stmt->execute([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR'], $id]);
+            $stmt->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $id]);
             $moduleNames = ['infographic' => 'สื่อประชาสัมพันธ์', 'situation' => 'สถานการณ์น้ำบาดาล', 'reports' => 'รายงานเกี่ยวกับน้ำบาดาล', 'mou' => 'บันทึกความเข้าใจ', 'laws' => 'กฎหมายน้ำบาดาล', 'downloads' => 'สื่อดาวน์โหลด', 'standards' => 'มาตรฐานและราคากลางการเจาะน้ำบาดาล', 'manuals' => 'คู่มือสำหรับประชาชน'];
             $moduleName = $moduleNames[$serviceType] ?? 'ข้อมูลบริการ';
-            $MS->StaffLog('ลบ' . $moduleName . ' ID: ' . $id, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 10, $id);
+            $MS->StaffLog('ลบ' . $moduleName . ' ID: ' . $id, $_SERVER['REQUEST_URI'], $StaffID, '', 10, $id);
             header("Location: index.php?type=".urlencode($serviceType));
             exit;
         } catch (PDOException $e) {
@@ -210,14 +207,14 @@ if ($action == 'save') {
                 $stmt->execute($params);
             } else if ($action == 'bulk_delete') {
                 $params = $idArray;
-                $DB->prepare("UPDATE service_doc_attachments SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE DocID IN ($placeholders)")->execute(array_merge([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']], $params));
+                $DB->prepare("UPDATE service_doc_attachments SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE DocID IN ($placeholders)")->execute(array_merge([$StaffID, $_SERVER['REMOTE_ADDR']], $params));
                 
                 $sqlDel = "UPDATE service_docs SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE DocID IN ($placeholders)";
                 $stmtDel = $DB->prepare($sqlDel);
-                $stmtDel->execute(array_merge([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']], $params));
+                $stmtDel->execute(array_merge([$StaffID, $_SERVER['REMOTE_ADDR']], $params));
                 $moduleNames = ['infographic' => 'สื่อประชาสัมพันธ์', 'situation' => 'สถานการณ์น้ำบาดาล', 'reports' => 'รายงานเกี่ยวกับน้ำบาดาล', 'mou' => 'บันทึกความเข้าใจ', 'laws' => 'กฎหมายน้ำบาดาล', 'downloads' => 'สื่อดาวน์โหลด', 'standards' => 'มาตรฐานและราคากลางการเจาะน้ำบาดาล', 'manuals' => 'คู่มือสำหรับประชาชน'];
                 $moduleName = $moduleNames[$serviceType] ?? 'ข้อมูลบริการ';
-                $MS->StaffLog('ลบ' . $moduleName . ' Bulk ID: ' . $ids, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 10, 0);
+                $MS->StaffLog('ลบ' . $moduleName . ' Bulk ID: ' . $ids, $_SERVER['REQUEST_URI'], $StaffID, '', 10, 0);
             }
         }
     }
