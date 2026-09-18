@@ -10,27 +10,29 @@ require_once('../includes/action_security.php');
 
 $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 $StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
-$action = mosGetParam($_FORM, 'action', '');
-$id = mosGetParam($_FORM, 'BannerID', '');
+$action = mosGetParam($_POST, 'action', '');
+$id = mosGetParam($_POST, 'BannerID', '');
 if (empty($id)) {
-    $id = mosGetParam($_FORM, 'id', '');
+    $id = mosGetParam($_POST, 'id', '');
 }
 
-$Title_TH = mosGetParam($_FORM, 'Title_TH', '');
-$Title_EN = mosGetParam($_FORM, 'Title_EN', '');
-$Description_TH = mosGetParam($_FORM, 'Description_TH', '');
-$Description_EN = mosGetParam($_FORM, 'Description_EN', '');
-$CTAText_TH = mosGetParam($_FORM, 'CTAText_TH', '');
-$CTAText_EN = mosGetParam($_FORM, 'CTAText_EN', '');
-$CTALink_TH = mosGetParam($_FORM, 'CTALink_TH', '');
-$CTALink_EN = mosGetParam($_FORM, 'CTALink_EN', '');
-$OrderNo = mosGetParam($_FORM, 'OrderNo', 1);
-$IsActive = mosGetParam($_FORM, 'IsActive', 'Y');
-$PublishStart = mosGetParam($_FORM, 'PublishStart', null);
-$PublishEnd = mosGetParam($_FORM, 'PublishEnd', null);
+$Title_TH = mosGetParam($_POST, 'Title_TH', '');
+$Title_EN = mosGetParam($_POST, 'Title_EN', '');
+$Description_TH = mosGetParam($_POST, 'Description_TH', '');
+$Description_EN = mosGetParam($_POST, 'Description_EN', '');
+$CTAText_TH = mosGetParam($_POST, 'CTAText_TH', '');
+$CTAText_EN = mosGetParam($_POST, 'CTAText_EN', '');
+$CTALink_TH = mosGetParam($_POST, 'CTALink_TH', '');
+$CTALink_EN = mosGetParam($_POST, 'CTALink_EN', '');
+$OrderNo = mosGetParam($_POST, 'OrderNo', 1);
+$IsActive = mosGetParam($_POST, 'IsActive', 'Y');
+$PublishStart = mosGetParam($_POST, 'PublishStart', null);
+$PublishEnd = mosGetParam($_POST, 'PublishEnd', null);
 if (!empty($PublishStart)) {
     $parts = explode('/', $PublishStart);
     if (count($parts) === 3) {
@@ -51,7 +53,7 @@ if (!empty($PublishEnd)) {
 // Set specific upload directory for hero_banner
 $sServerImgDir = $sServerImgDir . 'hero_banner/';
 
-$delete_main_image = mosGetParam($_FORM, 'delete_main_image', '0');
+$delete_main_image = mosGetParam($_POST, 'delete_main_image', '0');
 $Image = '';
 
 if ($id > 0) {
@@ -111,7 +113,7 @@ try {
         $MS->StaffLog('ลบแบนเนอร์หน้าแรก', $_SERVER['REQUEST_URI'], $StaffID, 1, 2, $id);
 
     } else if ($action === 'bulk_delete') {
-        $ids = mosGetParam($_FORM, 'ids', '');
+        $ids = mosGetParam($_POST, 'ids', '');
         if (!empty($ids)) {
             $idArray = array_filter(explode(',', $ids), 'is_numeric');
             if (!empty($idArray)) {
@@ -124,7 +126,7 @@ try {
             }
         }
     } else if (in_array($action, ['bulk_active', 'bulk_inactive'])) {
-        $ids = mosGetParam($_FORM, 'ids', '');
+        $ids = mosGetParam($_POST, 'ids', '');
         if (!empty($ids)) {
             $idArray = array_filter(explode(',', $ids), 'is_numeric');
             if (!empty($idArray)) {

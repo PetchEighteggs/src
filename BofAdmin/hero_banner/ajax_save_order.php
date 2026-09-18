@@ -4,13 +4,14 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
 include_once('../../configuration.php');
 include_once('../../config/ms_com.php');
 include_once('../../config/ms.class.php');
+require_once('../includes/action_security.php');
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
-    exit;
-}
+$DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['response' => 'json', 'login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST'], ['response' => 'json']);
+bofSecurityRequireCsrf(null, '_csrf_token', ['response' => 'json']);
 
 $data = json_decode(file_get_contents('php://input'), true);
 
@@ -19,7 +20,6 @@ if (!isset($data['order']) || !is_array($data['order'])) {
     exit;
 }
 
-$DB = mosConnectPDO();
 $MS = new MS($DB);
 
 try {
@@ -39,7 +39,7 @@ try {
     $DB->commit();
     
     // Log the action
-    $MS->StaffLog('จัดเรียงลำดับแบนเนอร์', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 2, 107, 0);
+    $MS->StaffLog('จัดเรียงลำดับแบนเนอร์', $_SERVER['REQUEST_URI'], (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0), 2, 107, 0);
 
     echo json_encode(['status' => 'success']);
 } catch (PDOException $e) {

@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = "ตั้งค่ารูปแบบแบนเนอร์หน้าแรก";
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $validTemplates = [
     'one-grid-slider',
@@ -12,6 +13,7 @@ $validTemplates = [
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'save_config') {
+    bofSecurityRequireCsrf();
     $Template = (string) ($_POST['Template'] ?? 'three-grid');
     if (!in_array($Template, $validTemplates, true)) {
         $Template = 'three-grid';
@@ -90,6 +92,7 @@ try {
 
 <div class="glass-panel p-6">
     <form action="config.php" method="POST" class="w-full" onsubmit="showLoading()">
+        <?php echo bofSecurityCsrfField(); ?>
         <input type="hidden" name="action" value="save_config">
         
         <div class="flex items-center gap-4 mb-6 pb-4 border-b border-gray-100">
