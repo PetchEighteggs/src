@@ -3,7 +3,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once( "../../../../../../../configuration.php" );
+$projectRoot = dirname(__DIR__, 4);
+require_once $projectRoot . '/configuration.php';
 /*
  * CKFinder Configuration File
  *
@@ -29,9 +30,14 @@ $config = array();
 /*============================ Enable PHP Connector HERE ==============================*/
 // https://ckeditor.com/docs/ckfinder/ckfinder3-php/configuration.html#configuration_options_authentication
 
-$projectRoot = $_Config_absolute_path;
+$databaseConfig = [
+    'host' => $DBServer,
+    'name' => $DBName,
+    'username' => $DBUsername,
+    'password' => $DBPassword
+];
 
-$config['authentication'] = function () use ($projectRoot) {
+$config['authentication'] = function () use ($databaseConfig) {
     if (
         empty($_SESSION['BofAdmin_LoggedIn']) ||
         $_SESSION['BofAdmin_LoggedIn'] !== true ||
@@ -42,8 +48,16 @@ $config['authentication'] = function () use ($projectRoot) {
     }
 
     try {
-        require_once $projectRoot . '/config/ms_com.php';
-        $db = mosConnectPDO();
+        $dsn = sprintf(
+            'mysql:host=%s;dbname=%s;charset=utf8mb4',
+            $databaseConfig['host'],
+            $databaseConfig['name']
+        );
+        $db = new PDO($dsn, $databaseConfig['username'], $databaseConfig['password'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_TIMEOUT => 5
+        ]);
         $stmt = $db->prepare(
             'SELECT StaffID FROM staff
              WHERE StaffID = ? AND StaffToken = ? AND StaffTokenEXP > NOW()
