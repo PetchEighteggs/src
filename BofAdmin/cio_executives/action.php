@@ -5,14 +5,12 @@ include_once('../../configuration.php');
 include_once('../../config/ms_com.php');
 include_once('../../config/ms.class.php');
 include_once('../../config/func.class.php');
+require_once('../includes/action_security.php');
 
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 $MS = new MS($DB);
-
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    header("Location: ../login.php");
-    exit;
-}
+$StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
 $action = mosGetParam($_FORM, 'action', '');
 $id = mosGetParam($_FORM, 'id', '');
@@ -20,8 +18,8 @@ $ModuleID = 14;
 
 if ($action === 'delete' && $id != '') {
     $stmt = $DB->prepare("UPDATE cio_executives SET DelData = 'Y', DelDataDate = NOW(), DelDataBy = ?, DelDataIP = ? WHERE CioID = ?");
-    $stmt->execute([$_SESSION['BofAdmin_StaffID'] ?? ($_SESSION['admin_id'] ?? 1), $_SERVER['REMOTE_ADDR'], $id]);
-    $MS->StaffLog('ลบข้อมูลผู้บริหาร CIO', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, $ModuleID, $id);
+    $stmt->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $id]);
+    $MS->StaffLog('ลบข้อมูลผู้บริหาร CIO', $_SERVER['REQUEST_URI'], $StaffID, 3, $ModuleID, $id);
     $_SESSION['alert'] = ['status' => 'success', 'title' => 'ลบข้อมูลสำเร็จ'];
     header("Location: index.php");
     exit;
@@ -31,11 +29,11 @@ if ($action === 'delete' && $id != '') {
         $idArray = array_filter(explode(',', $ids), 'is_numeric');
         if (!empty($idArray)) {
             $placeholders = implode(',', array_fill(0, count($idArray), '?'));
-            $params = array_merge([$_SESSION['BofAdmin_StaffID'] ?? ($_SESSION['admin_id'] ?? 1), $_SERVER['REMOTE_ADDR']], $idArray);
+            $params = array_merge([$StaffID, $_SERVER['REMOTE_ADDR']], $idArray);
             $stmt = $DB->prepare("UPDATE cio_executives SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE CioID IN ($placeholders)");
             $stmt->execute($params);
             
-            $MS->StaffLog('ลบข้อมูลผู้บริหาร CIO', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, $ModuleID);
+            $MS->StaffLog('ลบข้อมูลผู้บริหาร CIO', $_SERVER['REQUEST_URI'], $StaffID, 3, $ModuleID);
             $_SESSION['alert'] = ['status' => 'success', 'title' => 'ลบรายการที่เลือกสำเร็จ'];
         }
     }
@@ -48,11 +46,11 @@ if ($action === 'delete' && $id != '') {
         if (!empty($idArray)) {
             $status = ($action === 'bulk_active') ? 'Y' : 'N';
             $placeholders = implode(',', array_fill(0, count($idArray), '?'));
-            $params = array_merge([$status, $_SESSION['BofAdmin_StaffID'] ?? ($_SESSION['admin_id'] ?? 1), $_SERVER['REMOTE_ADDR']], $idArray);
+            $params = array_merge([$status, $StaffID, $_SERVER['REMOTE_ADDR']], $idArray);
             $stmt = $DB->prepare("UPDATE cio_executives SET IsActive=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE CioID IN ($placeholders)");
             $stmt->execute($params);
             
-            $MS->StaffLog('เปลี่ยนสถานะผู้บริหาร CIO', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, $ModuleID);
+            $MS->StaffLog('เปลี่ยนสถานะผู้บริหาร CIO', $_SERVER['REQUEST_URI'], $StaffID, 3, $ModuleID);
             $_SESSION['alert'] = ['status' => 'success', 'title' => ($status === 'Y' ? 'เปิดใช้งานรายการที่เลือกสำเร็จ' : 'ปิดการใช้งานรายการที่เลือกสำเร็จ')];
         }
     }
@@ -99,11 +97,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $stmt->execute([
             $Prefix_TH, $Prefix_EN, $FirstName_TH, $FirstName_EN, $LastName_TH, $LastName_EN, $Position_TH, $Position_EN, $Detail_TH, $Detail_EN, $Address, $Telephone, $Email, $AppointDate, $AppointOrderNo, $ImagePath, $OrderNo, $IsActive,
-            $_SESSION['BofAdmin_StaffID'] ?? ($_SESSION['admin_id'] ?? 1), $_SERVER['REMOTE_ADDR']
+            $StaffID, $_SERVER['REMOTE_ADDR']
         ]);
 
         $newId = $DB->lastInsertId();
-        $MS->StaffLog('เพิ่มข้อมูลผู้บริหาร CIO', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, $ModuleID, $newId);
+        $MS->StaffLog('เพิ่มข้อมูลผู้บริหาร CIO', $_SERVER['REQUEST_URI'], $StaffID, 3, $ModuleID, $newId);
         $_SESSION['alert'] = ['status' => 'success', 'title' => 'บันทึกข้อมูลสำเร็จ'];
 
     } elseif ($action === 'edit' && $id != '') {
@@ -150,10 +148,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $stmt->execute([
             $Prefix_TH, $Prefix_EN, $FirstName_TH, $FirstName_EN, $LastName_TH, $LastName_EN, $Position_TH, $Position_EN, $Detail_TH, $Detail_EN, $Address, $Telephone, $Email, $AppointDate, $AppointOrderNo, $ImagePath, $OrderNo, $IsActive,
-            $_SESSION['BofAdmin_StaffID'] ?? ($_SESSION['admin_id'] ?? 1), $_SERVER['REMOTE_ADDR'], $id
+            $StaffID, $_SERVER['REMOTE_ADDR'], $id
         ]);
 
-        $MS->StaffLog('แก้ไขข้อมูลผู้บริหาร CIO', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, $ModuleID, $id);
+        $MS->StaffLog('แก้ไขข้อมูลผู้บริหาร CIO', $_SERVER['REQUEST_URI'], $StaffID, 3, $ModuleID, $id);
         $_SESSION['alert'] = ['status' => 'success', 'title' => 'แก้ไขข้อมูลสำเร็จ'];
     }
     

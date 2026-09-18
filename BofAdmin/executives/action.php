@@ -2,21 +2,19 @@
 define('_VALID_ACCESS', 1);
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    header("Location: ../login.php");
-    exit;
-}
+include_once('../../configuration.php');
+include_once('../../config/ms_com.php');
+include_once('../../config/ms.class.php');
+include_once('../../config/func.class.php');
+require_once('../includes/action_security.php');
+
+$DB = mosConnectPDO();
+if (!$DB) { echo "DB Connection Failed"; exit; }
+bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
+$MS = new MS($DB);
+$StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    include_once('../../configuration.php');
-    include_once('../../config/ms_com.php');
-    include_once('../../config/ms.class.php');
-    include_once('../../config/func.class.php');
-    
-    $DB = mosConnectPDO();
-    if (!$DB) { echo "DB Connection Failed"; exit; }
-    $MS = new MS($DB);
-
     $action = $_POST['action'] ?? '';
     $id = $_POST['id'] ?? null;
     $uploadDir = $sServerImgDir . 'executives/';
@@ -30,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $DetailEN = $_POST['DetailEN'] ?? '';
     
     $UserIP = $_SERVER['REMOTE_ADDR'] ?? '';
-    $UserID = $_SESSION['admin_id'] ?? 0;
+    $UserID = $StaffID;
 
     $arAllowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
     $arDenied = ['php', 'exe', 'sh'];
@@ -67,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $DB->commit();
-            $MS->StaffLog('เพิ่มบุคลากร', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 7, $newExecID);
+            $MS->StaffLog('เพิ่มบุคลากร', $_SERVER['REQUEST_URI'], $StaffID, 3, 7, $newExecID);
             $_SESSION['sys_msg'] = ['status' => 'success', 'msg' => 'เพิ่มข้อมูลสำเร็จ'];
         } catch (PDOException $e) {
             $DB->rollBack();
@@ -116,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $DB->commit();
-            $MS->StaffLog('แก้ไขบุคลากร', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 7, $id);
+            $MS->StaffLog('แก้ไขบุคลากร', $_SERVER['REQUEST_URI'], $StaffID, 3, 7, $id);
             $_SESSION['sys_msg'] = ['status' => 'success', 'msg' => 'บันทึกข้อมูลสำเร็จ'];
         } catch (PDOException $e) {
             $DB->rollBack();
@@ -126,23 +124,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header("Location: index.php");
     exit;
 } elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
-    include_once('../../configuration.php');
-    include_once('../../config/ms_com.php');
-    include_once('../../config/ms.class.php');
-    $DB = mosConnectPDO();
-    $MS = new MS($DB);
     $action = $_GET['action'];
     
     if ($action === 'delete') {
         $id = $_GET['id'] ?? null;
         if ($id) {
             $UserIP = $_SERVER['REMOTE_ADDR'] ?? '';
-            $UserID = $_SESSION['admin_id'] ?? 0;
+            $UserID = $StaffID;
             // Soft Delete the person
             $DB->prepare("UPDATE microsite_executives SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE ExecID=?")->execute([$UserID, $UserIP, $id]);
             // Soft Delete all mapping records
             $DB->prepare("UPDATE org_executive_positions SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE ExecID=?")->execute([$UserID, $UserIP, $id]);
-            $MS->StaffLog('ลบข้อมูลผู้บริหาร', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 7, $id);
+            $MS->StaffLog('ลบข้อมูลผู้บริหาร', $_SERVER['REQUEST_URI'], $StaffID, 3, 7, $id);
             $_SESSION['sys_msg'] = ['status' => 'success', 'msg' => 'ลบข้อมูลสำเร็จ'];
         }
     } elseif ($action === 'bulk_delete') {
@@ -151,12 +144,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $idArray = array_filter(explode(',', $ids), 'is_numeric');
             if (!empty($idArray)) {
                 $placeholders = implode(',', array_fill(0, count($idArray), '?'));
-                $params = array_merge([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']], $idArray);
+                $params = array_merge([$StaffID, $_SERVER['REMOTE_ADDR']], $idArray);
                 
                 $DB->prepare("UPDATE microsite_executives SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE ExecID IN ($placeholders)")->execute($params);
                 $DB->prepare("UPDATE org_executive_positions SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE ExecID IN ($placeholders)")->execute($params);
                 
-                $MS->StaffLog('ลบข้อมูลผู้บริหาร', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 7);
+                $MS->StaffLog('ลบข้อมูลผู้บริหาร', $_SERVER['REQUEST_URI'], $StaffID, 3, 7);
                 $_SESSION['sys_msg'] = ['status' => 'success', 'msg' => 'ลบข้อมูลที่เลือกสำเร็จ'];
             }
         }
@@ -171,7 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 $DB->prepare("UPDATE org_executive_positions SET IsActive=? WHERE ExecID IN ($placeholders)")->execute($params);
                 
-                $MS->StaffLog('เปลี่ยนสถานะบุคลากร', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 7);
+                $MS->StaffLog('เปลี่ยนสถานะบุคลากร', $_SERVER['REQUEST_URI'], $StaffID, 3, 7);
                 $_SESSION['sys_msg'] = ['status' => 'success', 'msg' => 'เปลี่ยนสถานะข้อมูลที่เลือกสำเร็จ'];
             }
         }

@@ -5,13 +5,11 @@ include_once('../../configuration.php');
 include_once('../../config/ms_com.php');
 include_once('../../config/ms.class.php');
 include_once('../../config/func.class.php'); 
+require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 $MS = new MS($DB);
-
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    header("Location: ../login.php");
-    exit;
-}
+$StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -59,11 +57,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $cioID, $_POST['Title_TH'], $_POST['Title_EN'], $_POST['Content_TH'], $_POST['Content_EN'], 
                 $eventStartDate, $eventEndDate, $_POST['TimeFrom'], $_POST['TimeTo'], 
                 $_POST['Location_TH'], $_POST['Location_EN'], $coverPath, $isActive, 
-                $_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']
+                $StaffID, $_SERVER['REMOTE_ADDR']
             ]);
             $newId = $DB->lastInsertId();
 
-            $MS->StaffLog('เพิ่มปฏิทินกิจกรรม CIO', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 13, $newId);
+            $MS->StaffLog('เพิ่มปฏิทินกิจกรรม CIO', $_SERVER['REQUEST_URI'], $StaffID, 3, 13, $newId);
             header("Location: index.php");
             exit;
         } catch (PDOException $e) { die("Error: " . $e->getMessage()); }
@@ -98,10 +96,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $cioID, $_POST['Title_TH'], $_POST['Title_EN'], $_POST['Content_TH'], $_POST['Content_EN'], 
                 $eventStartDate, $eventEndDate, $_POST['TimeFrom'], $_POST['TimeTo'], 
                 $_POST['Location_TH'], $_POST['Location_EN'], $coverPath, $isActive, 
-                $_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR'], $id
+                $StaffID, $_SERVER['REMOTE_ADDR'], $id
             ]);
 
-            $MS->StaffLog('แก้ไขปฏิทินกิจกรรม CIO', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 13, $id);
+            $MS->StaffLog('แก้ไขปฏิทินกิจกรรม CIO', $_SERVER['REQUEST_URI'], $StaffID, 3, 13, $id);
             header("Location: index.php");
             exit;
         } catch (PDOException $e) { die("Error: " . $e->getMessage()); }
@@ -110,9 +108,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = $_GET['id'];
     try {
         $stmt = $DB->prepare("UPDATE cio_events SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE EventID=?");
-        $stmt->execute([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR'], $id]);
+        $stmt->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $id]);
         
-        $MS->StaffLog('ลบปฏิทินกิจกรรม CIO', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 13, $id);
+        $MS->StaffLog('ลบปฏิทินกิจกรรม CIO', $_SERVER['REQUEST_URI'], $StaffID, 3, 13, $id);
         
         header("Location: index.php");
         exit;
@@ -126,12 +124,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $idArray = array_filter(explode(',', $ids), 'is_numeric');
             if (!empty($idArray)) {
                 $placeholders = implode(',', array_fill(0, count($idArray), '?'));
-                $params = array_merge([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']], $idArray);
+                $params = array_merge([$StaffID, $_SERVER['REMOTE_ADDR']], $idArray);
                 
                 $stmt = $DB->prepare("UPDATE cio_events SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE EventID IN ($placeholders)");
                 $stmt->execute($params);
                 
-                $MS->StaffLog('ลบปฏิทินกิจกรรม CIO', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 13);
+                $MS->StaffLog('ลบปฏิทินกิจกรรม CIO', $_SERVER['REQUEST_URI'], $StaffID, 3, 13);
             }
             header("Location: index.php");
             exit;
@@ -152,7 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $DB->prepare("UPDATE cio_events SET IsActive=? WHERE EventID IN ($placeholders)");
                 $stmt->execute($params);
                 
-                $MS->StaffLog('เปลี่ยนสถานะปฏิทินกิจกรรม CIO', $_SERVER['REQUEST_URI'], $_SESSION['admin_id'] ?? 1, 3, 13);
+                $MS->StaffLog('เปลี่ยนสถานะปฏิทินกิจกรรม CIO', $_SERVER['REQUEST_URI'], $StaffID, 3, 13);
             }
             header("Location: index.php");
             exit;
