@@ -6,6 +6,7 @@ if (isset($_GET['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVE
 }
 $pageTitle = "จัดการหมวดหมู่ข่าวสาร";
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $search = mosGetParam($_FORM, 'search', '');
 $searchStatus = $_GET['status'] ?? '';
@@ -120,6 +121,13 @@ try {
     </div>
     <?php endif; ?>
 
+    <form id="categoryActionForm" action="action.php" method="POST" class="hidden">
+        <?php echo bofSecurityCsrfField(); ?>
+        <input type="hidden" name="action" id="categoryActionName" value="">
+        <input type="hidden" name="id" id="categoryActionId" value="">
+        <input type="hidden" name="ids" id="categoryActionIds" value="">
+    </form>
+
     <?php if (defined('IS_AJAX')) { ob_clean(); } ?>
     <div id="categoriesTableContainer" class="space-y-6">
         <?php if (!empty($searchStatus)): ?>
@@ -194,9 +202,9 @@ try {
                                         <i class="ph ph-clock-counter-clockwise"></i>
                                     </button>
                                     <?php if ($userPermissions['delete']): ?>
-                                    <a href="action.php?action=delete&id=<?php echo $row['CategoryID']; ?>" onclick="confirmLink(event, this.href, 'ยืนยันการลบข้อมูลนี้หรือไม่?');" class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="ลบ">
+                                    <button type="button" onclick="deleteCategory(<?php echo (int)$row['CategoryID']; ?>)" class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="ลบ">
                                         <i class="ph ph-trash"></i>
-                                    </a>
+                                    </button>
                                     <?php endif; ?>
                                 </div>
                             </td>
@@ -442,7 +450,28 @@ function executeBulkAction() {
     }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'action.php?action=' + actionStr + '&ids=' + ids;
+            document.getElementById('categoryActionName').value = actionStr;
+            document.getElementById('categoryActionId').value = '';
+            document.getElementById('categoryActionIds').value = ids;
+            document.getElementById('categoryActionForm').submit();
+        }
+    });
+}
+
+function deleteCategory(id) {
+    AdminDialog.fire({
+        title: 'ยืนยันการลบ?',
+        text: 'ยืนยันการลบข้อมูลนี้หรือไม่?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยันการลบ',
+        cancelButtonText: 'ยกเลิก'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('categoryActionName').value = 'delete';
+            document.getElementById('categoryActionId').value = id;
+            document.getElementById('categoryActionIds').value = '';
+            document.getElementById('categoryActionForm').submit();
         }
     });
 }

@@ -9,11 +9,13 @@ require_once('../includes/action_security.php');
 
 $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 $StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
-$action = mosGetParam($_FORM, 'action', '');
-$id = mosGetParam($_FORM, 'id', '');
+$action = mosGetParam($_POST, 'action', '');
+$id = mosGetParam($_POST, 'id', '');
 
 if ($action === 'delete' && $id != '') {
     $stmt = $DB->prepare("UPDATE news_category SET DelData = 'Y', DelDataDate = NOW(), DelDataBy = ?, DelDataIP = ? WHERE CategoryID = ?");
@@ -23,7 +25,7 @@ if ($action === 'delete' && $id != '') {
     header("Location: index.php");
     exit;
 } else if ($action == 'bulk_delete') {
-    $ids = mosGetParam($_FORM, 'ids', '');
+    $ids = mosGetParam($_POST, 'ids', '');
     if (!empty($ids)) {
         $idArray = array_filter(explode(',', $ids), 'is_numeric');
         if (!empty($idArray)) {
@@ -38,7 +40,7 @@ if ($action === 'delete' && $id != '') {
     header("Location: index.php");
     exit;
 } else if (in_array($action, ['bulk_active', 'bulk_inactive'])) {
-    $ids = mosGetParam($_FORM, 'ids', '');
+    $ids = mosGetParam($_POST, 'ids', '');
     if (!empty($ids)) {
         $idArray = array_filter(explode(',', $ids), 'is_numeric');
         if (!empty($idArray)) {
