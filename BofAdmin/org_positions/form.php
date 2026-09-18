@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'โครงสร้างและตำแหน่งข้าราชการ';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $id = $_GET['id'] ?? 0;
 $action = $id > 0 ? 'edit' : 'add';
@@ -47,6 +48,7 @@ try {
 ?>
 
 <form action="action.php" method="POST" class="space-y-6" onsubmit="showLoading()">
+    <?php echo bofSecurityCsrfField(); ?>
     <input type="hidden" name="action" value="save">
     <input type="hidden" name="PositionID" value="<?php echo $data['PositionID']; ?>">
 

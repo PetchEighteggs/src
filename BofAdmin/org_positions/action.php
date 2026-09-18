@@ -8,10 +8,12 @@ include_once('../../config/func.class.php');
 require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 $StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
-$action = $_REQUEST['action'] ?? '';
+$action = $_POST['action'] ?? '';
 
 if ($action === 'save') {
     $positionID = $_POST['PositionID'] ?? 0;
@@ -65,7 +67,7 @@ if ($action === 'save') {
     }
 
 } elseif ($action === 'delete') {
-    $id = $_GET['id'] ?? 0;
+    $id = $_POST['id'] ?? 0;
     if ($id > 0) {
         $adminId = $StaffID;
         $ip = $_SERVER['REMOTE_ADDR'];
@@ -84,7 +86,7 @@ if ($action === 'save') {
         }
     }
 } elseif (in_array($action, ['bulk_active', 'bulk_inactive', 'bulk_delete'])) {
-    $ids = $_GET['ids'] ?? '';
+    $ids = $_POST['ids'] ?? '';
     if (!empty($ids)) {
         $idArray = array_filter(explode(',', $ids), 'is_numeric');
         if (count($idArray) > 0) {

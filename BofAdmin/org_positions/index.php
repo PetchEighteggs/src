@@ -6,6 +6,7 @@ if (isset($_GET['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVE
 }
 $pageTitle = 'โครงสร้างและตำแหน่งข้าราชการ';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $searchKeyword = $_GET['keyword'] ?? '';
 $searchDeptID = $_GET['dept_id'] ?? '';
@@ -163,6 +164,13 @@ try {
         <span class="text-sm text-gray-500 ml-2" id="bulkCountText"></span>
     </div>
     <?php endif; ?>
+
+    <form id="orgPositionActionForm" action="action.php" method="POST" class="hidden">
+        <?php echo bofSecurityCsrfField(); ?>
+        <input type="hidden" name="action" id="orgPositionActionName" value="">
+        <input type="hidden" name="id" id="orgPositionActionId" value="">
+        <input type="hidden" name="ids" id="orgPositionActionIds" value="">
+    </form>
 
     <?php if (defined('IS_AJAX')) { ob_clean(); } ?>
     <div id="dataTableContainer" class="space-y-6">
@@ -472,7 +480,10 @@ function executeBulkAction() {
     }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'action.php?action=' + actionStr + '&ids=' + ids;
+            document.getElementById('orgPositionActionName').value = actionStr;
+            document.getElementById('orgPositionActionId').value = '';
+            document.getElementById('orgPositionActionIds').value = ids;
+            document.getElementById('orgPositionActionForm').submit();
         }
     });
 }
@@ -489,7 +500,10 @@ function deleteItem(id) {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = 'action.php?action=delete&id=' + id;
+            document.getElementById('orgPositionActionName').value = 'delete';
+            document.getElementById('orgPositionActionId').value = id;
+            document.getElementById('orgPositionActionIds').value = '';
+            document.getElementById('orgPositionActionForm').submit();
         }
     });
 }
