@@ -50,7 +50,9 @@ $data = [
     'IsActive' => 'Y',
     'OrderNo' => '0',
     'ParentID' => 0,
-    'SubID' => 0
+    'SubID' => 0,
+    'ModuleType' => '',
+    'ModuleRefID' => 0
 ];
 
 if ($id > 0) {
@@ -119,7 +121,19 @@ if ($id > 0) {
                     <h3 class="font-semibold text-gray-700 mb-4 flex items-center gap-2"><i class="ph ph-info"></i> ข้อมูลทั่วไป</h3>
                     
                     <div class="mb-4">
-                        <label class="block text-sm text-gray-600 mb-1">ลิงก์ปลายทาง (URL) <span class="text-red-500">*</span></label>
+                        <label class="block text-sm text-gray-600 mb-1">การเชื่อมโยงโมดูลอ้างอิง</label>
+                        <select name="ModuleType" id="ModuleType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm bg-white mb-3" onchange="toggleUrlRequirement()">
+                            <option value="" <?php echo $data['ModuleType'] == '' ? 'selected' : ''; ?>>ไม่มี</option>
+                            <option value="about" <?php echo $data['ModuleType'] == 'about' ? 'selected' : ''; ?>>เกี่ยวกับหน่วยงาน</option>
+                            <option value="news" <?php echo $data['ModuleType'] == 'news' ? 'selected' : ''; ?>>ข่าวประชาสัมพันธ์</option>
+                            <option value="multimedia" <?php echo $data['ModuleType'] == 'multimedia' ? 'selected' : ''; ?>>สื่อมัลติมีเดีย</option>
+                            <option value="download" <?php echo $data['ModuleType'] == 'download' ? 'selected' : ''; ?>>ดาวน์โหลด</option>
+                            <option value="gallery" <?php echo $data['ModuleType'] == 'gallery' ? 'selected' : ''; ?>>อัลบั้มภาพ</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm text-gray-600 mb-1">ลิงก์ปลายทาง (URL) <span class="text-red-500" id="urlReqStar">*</span></label>
                         <input type="text" name="URL" id="URL" placeholder="https://" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm bg-white resize-none" value="<?php echo htmlspecialchars($data['URL']); ?>" required>
                         <p class="text-xs text-gray-400 mt-1">หมายเหตุ : กรุณา URL นำหน้าด้วย "https://" เช่น https://www.dgr.go.th เป็นต้น</p>
                     </div>
@@ -182,8 +196,26 @@ function removeImage(e) {
     e.stopPropagation();
     previewContainerImage.style.display = 'none';
     deleteImageInput.value = '1';
-    imageFileInput.value = ''; // clear file input
+    imageFileInput.value = '';
 }
 
+function toggleUrlRequirement() {
+    const moduleType = document.getElementById('ModuleType').value;
+    const urlInput = document.getElementById('URL');
+    const urlReqStar = document.getElementById('urlReqStar');
+    
+    if (!moduleType) {
+        urlInput.required = true;
+        urlReqStar.style.display = 'inline';
+    } else {
+        urlInput.required = false;
+        urlReqStar.style.display = 'none';
+    }
+}
+
+// Initial load for edit mode
+document.addEventListener('DOMContentLoaded', () => {
+    toggleUrlRequirement();
+});
 </script>
 <?php include_once('../../includes/footer.php'); ?>

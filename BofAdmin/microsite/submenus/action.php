@@ -58,9 +58,9 @@ if ($action == 'save') {
 
     if ($id > 0) {
         // Update
-        $sql = "UPDATE microsite_submenus SET MenuID=?, SubMenuNameTH=?, SubMenuNameEN=?, URL=?, Target=?, IsActive=?, OrderNo=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE SubMenuID=? AND DeptID=? AND COALESCE(DelData, 'N') <> 'Y'";
+        $sql = "UPDATE microsite_submenus SET MenuID=?, SubMenuNameTH=?, SubMenuNameEN=?, URL=?, Target=?, IsActive=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE SubMenuID=? AND DeptID=? AND COALESCE(DelData, 'N') <> 'Y'";
         $stmt = $DB->prepare($sql);
-        $stmt->execute([$menuID, $subMenuNameTH, $subMenuNameEN, $url, $target, $isActive, $orderNo, $staffID, $requestIP, $id, $deptID]);
+        $stmt->execute([$menuID, $subMenuNameTH, $subMenuNameEN, $url, $target, $isActive, $staffID, $requestIP, $id, $deptID]);
     } else {
         // Insert
         $sql = "INSERT INTO microsite_submenus (DeptID, MenuID, SubMenuNameTH, SubMenuNameEN, URL, Target, IsActive, OrderNo, CreateDate, CreateBy, CreateIP, DelData) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, 'N')";

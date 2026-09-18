@@ -1,5 +1,7 @@
 <?php
-define('_VALID_ACCESS', 1);
+if (!defined('_VALID_ACCESS')) {
+    define('_VALID_ACCESS', 1);
+}
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -90,8 +92,13 @@ if (isset($_SESSION['GroupID']) && $_SESSION['GroupID'] === 'S') {
                     }
                 }
                 
+                $isMicrositePage = (strpos(str_replace('\\', '/', $_SERVER['REQUEST_URI'] ?? ''), '/microsite/') !== false) || (strpos(str_replace('\\', '/', $_SERVER['PHP_SELF'] ?? ''), '/microsite/') !== false);
+                
+                if (!empty($_SESSION['ActiveDeptID']) && !$isMicrositePage) {
+                    $userPermissions['view'] = false;
+                }
+                
                 if (!$userPermissions['view']) {
-                    $isMicrositePage = (strpos(str_replace('\\', '/', $_SERVER['REQUEST_URI'] ?? ''), '/microsite/') !== false) || (strpos(str_replace('\\', '/', $_SERVER['PHP_SELF'] ?? ''), '/microsite/') !== false);
                     if (!$isMicrositePage) {
                         if ($currentFilename === 'index.php' || $currentFilename === '') {
                             if (($_SESSION['GroupID'] ?? '') === 'S') {

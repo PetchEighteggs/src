@@ -47,11 +47,17 @@ if ($action === 'save') {
     $orderNo = (int)($_POST['OrderNo'] ?? 0);
     $deleteImage = ($_POST['delete_image'] ?? '0') === '1';
 
+    $moduleType = trim($_POST['ModuleType'] ?? '');
+
+    if (!empty($moduleType) && empty($url)) {
+        $url = '#';
+    }
+
     $activeDeptSlug = $_SESSION['ActiveDeptSlug'] ?? '';
     if ($activeDeptSlug === '') {
-        $stmtSlug = $DB->prepare("SELECT Slug FROM microsite_departments WHERE DeptID=?");
-        $stmtSlug->execute([$deptID]);
-        $activeDeptSlug = (string)$stmtSlug->fetchColumn();
+      $stmtSlug = $DB->prepare("SELECT Slug FROM microsite_departments WHERE DeptID=?");
+      $stmtSlug->execute([$deptID]);
+      $activeDeptSlug = (string)$stmtSlug->fetchColumn();
     }
 
     try {
@@ -71,11 +77,11 @@ if ($action === 'save') {
 
         try {
             if ($id > 0) {
-                $stmt = $DB->prepare("UPDATE microsite_menus SET MenuNameTH=?, MenuNameEN=?, Image=?, URL=?, Target='_self', IsActive=?, OrderNo=?, ParentID=0, SubID=0, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE MenuID=? AND DeptID=? AND COALESCE(DelData, 'N') <> 'Y'");
-                $stmt->execute([$menuNameTH, $menuNameEN, $imageName, $url, $isActive, $orderNo, $staffID, $requestIP, $id, $deptID]);
+                $stmt = $DB->prepare("UPDATE microsite_menus SET MenuNameTH=?, MenuNameEN=?, Image=?, URL=?, Target='_self', IsActive=?, ModuleType=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE MenuID=? AND DeptID=? AND COALESCE(DelData, 'N') <> 'Y'");
+                $stmt->execute([$menuNameTH, $menuNameEN, $imageName, $url, $isActive, $moduleType, $staffID, $requestIP, $id, $deptID]);
             } else {
-                $stmt = $DB->prepare("INSERT INTO microsite_menus (DeptID, MenuNameTH, MenuNameEN, Image, URL, Target, IsActive, OrderNo, ParentID, SubID, CreateDate, CreateBy, CreateIP, DelData) VALUES (?, ?, ?, ?, ?, '_self', ?, ?, 0, 0, NOW(), ?, ?, 'N')");
-                $stmt->execute([$deptID, $menuNameTH, $menuNameEN, $imageName, $url, $isActive, $orderNo, $staffID, $requestIP]);
+                $stmt = $DB->prepare("INSERT INTO microsite_menus (DeptID, MenuNameTH, MenuNameEN, Image, URL, Target, IsActive, OrderNo, ModuleType, CreateDate, CreateBy, CreateIP, DelData) VALUES (?, ?, ?, ?, ?, '_self', ?, ?, ?, NOW(), ?, ?, 'N')");
+                $stmt->execute([$deptID, $menuNameTH, $menuNameEN, $imageName, $url, $isActive, $orderNo, $moduleType, $staffID, $requestIP]);
             }
         } catch (PDOException $e) {
             if ($newName !== null && is_file($uploadDir . $newName)) {
@@ -101,9 +107,9 @@ if ($action === 'save') {
 if ($action === 'delete') {
     $id = (int)($_GET['id'] ?? 0);
     if ($id > 0) {
-        $stmt = $DB->prepare("UPDATE microsite_menus SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE MenuID=? AND DeptID=? AND COALESCE(DelData, 'N') <> 'Y'");
-        $stmt->execute([$staffID, $requestIP, $staffID, $requestIP, $id, $deptID]);
-        $MS->StaffLog('ลบเมนู Microsite ID: ' . $id, $_SERVER['REQUEST_URI'], $staffID, '', 2, $id);
+      $stmt = $DB->prepare("UPDATE microsite_menus SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE MenuID=? AND DeptID=? AND COALESCE(DelData, 'N') <> 'Y'");
+      $stmt->execute([$staffID, $requestIP, $staffID, $requestIP, $id, $deptID]);
+      $MS->StaffLog('ลบเมนู Microsite ID: ' . $id, $_SERVER['REQUEST_URI'], $staffID, '', 2, $id);
     }
     header('Location: index.php');
     exit;
@@ -126,6 +132,5 @@ if (in_array($action, ['bulk_active', 'bulk_inactive', 'bulk_delete'], true)) {
         $MS->StaffLog('Bulk ' . $action . ' เมนู Microsite', $_SERVER['REQUEST_URI'], $staffID, '', 2);
     }
 }
-
 header('Location: index.php');
 exit;

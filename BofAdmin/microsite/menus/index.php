@@ -77,7 +77,7 @@ try {
         $totalRecords = $countStmt->fetchColumn();
         $totalPages = ceil($totalRecords / $limit);
         
-        $sql .= " ORDER BY OrderNo DESC, MenuID DESC LIMIT $limit OFFSET $offset";
+        $sql .= " ORDER BY OrderNo ASC, MenuID ASC LIMIT $limit OFFSET $offset";
         $stmt = $DB->prepare($sql);
         $stmt->execute($params);
         $menuList = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -130,6 +130,11 @@ try {
         </div>
         
         <div class="flex items-center gap-3">
+                    <?php if ($canEdit): ?>
+                    <a href="sort.php" class="px-4 py-2 bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 h-10">
+                        <i class="ph ph-arrows-down-up text-lg"></i> จัดเรียงลำดับ
+                    </a>
+                    <?php endif; ?>
 					<a href="../submenus/index.php" class="px-4 py-2 border border-primary/20 text-primary bg-white hover:bg-primary hover:text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
 							<i class="ph ph-list-dashes"></i> จัดการเมนูย่อย
 					</a>
@@ -207,10 +212,10 @@ try {
 									</div>
 									<?php if (!empty($row['MenuNameEN'])): ?>
 									<?php endif; ?>
-									<div class="text-sm text-gray-500 mt-1 flex items-center gap-1 truncate max-w-sm">
+									<?php /* ?><div class="text-sm text-gray-500 mt-1 flex items-center gap-1 truncate max-w-sm">
 										<i class="ph ph-link text-gray-400"></i>
 										<?php echo htmlspecialchars($row['URL']); ?>
-									</div>
+									</div> <?php */ ?>
 								</td>
 									<td class="py-4 px-6 text-center">
 											<?php if(($row['IsActive'] ?? 'Y') == 'Y'): ?>

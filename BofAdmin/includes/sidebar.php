@@ -74,92 +74,94 @@
                     }
                 }
 
-                $grpStmt = $DB->prepare("SELECT * FROM bof_section_group WHERE SectionGroupShow = 'Y' ORDER BY SectionGroupOrder ASC");
-                $grpStmt->execute();
-                $groups = $grpStmt->fetchAll(PDO::FETCH_ASSOC);
+                if (empty($_SESSION['ActiveDeptID'])) {
+                    $grpStmt = $DB->prepare("SELECT * FROM bof_section_group WHERE SectionGroupShow = 'Y' ORDER BY SectionGroupOrder ASC");
+                    $grpStmt->execute();
+                    $groups = $grpStmt->fetchAll(PDO::FETCH_ASSOC);
 
-                foreach($groups as $group) {
-                    $secStmt = $DB->prepare("SELECT * FROM bof_section WHERE SectionGroupID = ? AND SectionShow = 'Y' ORDER BY SectionOrder ASC");
-                    $secStmt->execute([$group['SectionGroupID']]);
-                    $sections = $secStmt->fetchAll(PDO::FETCH_ASSOC);
+                    foreach($groups as $group) {
+                        $secStmt = $DB->prepare("SELECT * FROM bof_section WHERE SectionGroupID = ? AND SectionShow = 'Y' ORDER BY SectionOrder ASC");
+                        $secStmt->execute([$group['SectionGroupID']]);
+                        $sections = $secStmt->fetchAll(PDO::FETCH_ASSOC);
 
-                    // Filter sections based on permissions
-                    $visibleSections = [];
-                    foreach($sections as $sec) {
-                        // All sections are visible to Admin ('A'). 
-                        // For 'S', check if SectionID is in $permissions
-                        if ($userGroupID === 'A' || in_array($sec['SectionID'], $permissions)) {
-                            $visibleSections[] = $sec;
+                        // Filter sections based on permissions
+                        $visibleSections = [];
+                        foreach($sections as $sec) {
+                            // All sections are visible to Admin ('A'). 
+                            // For 'S', check if SectionID is in $permissions
+                            if ($userGroupID === 'A' || in_array($sec['SectionID'], $permissions)) {
+                                $visibleSections[] = $sec;
+                            }
                         }
-                    }
 
-                    if(count($visibleSections) > 0) {
-                        // 1. Check which sections are active and if the group should be open
-                        $groupIsActive = false;
-                        $processedSections = [];
-                        
-                        foreach($visibleSections as $sec) {
-                            $isActive = false;
+                        if(count($visibleSections) > 0) {
+                            // 1. Check which sections are active and if the group should be open
+                            $groupIsActive = false;
+                            $processedSections = [];
                             
-                            $secUrlParts = explode('?', $sec['SectionURL']);
-                            $secPath = $secUrlParts[0];
-                            $secQueryStr = $secUrlParts[1] ?? '';
-                            
-                            $currentFolder = explode('/', $currentUrl)[0];
-                            $secFolder = explode('/', $secPath)[0];
-                            
-                            if ($currentUrl === $secPath || ($currentFolder === $secFolder && $currentFolder !== 'index.php')) {
-                                $isActive = true;
+                            foreach($visibleSections as $sec) {
+                                $isActive = false;
                                 
-                                $currentQueryString = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY) ?? '';
-                                parse_str($currentQueryString, $currentQuery);
-                                parse_str($secQueryStr, $secQuery);
+                                $secUrlParts = explode('?', $sec['SectionURL']);
+                                $secPath = $secUrlParts[0];
+                                $secQueryStr = $secUrlParts[1] ?? '';
                                 
-                                foreach (['group', 'cat', 'type'] as $routeParam) {
-                                    $cVal = $currentQuery[$routeParam] ?? '';
-                                    $sVal = $secQuery[$routeParam] ?? '';
-                                    if ($cVal !== $sVal) {
-                                        $isActive = false;
-                                        break;
+                                $currentFolder = explode('/', $currentUrl)[0];
+                                $secFolder = explode('/', $secPath)[0];
+                                
+                                if ($currentUrl === $secPath || ($currentFolder === $secFolder && $currentFolder !== 'index.php')) {
+                                    $isActive = true;
+                                    
+                                    $currentQueryString = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY) ?? '';
+                                    parse_str($currentQueryString, $currentQuery);
+                                    parse_str($secQueryStr, $secQuery);
+                                    
+                                    foreach (['group', 'cat', 'type'] as $routeParam) {
+                                        $cVal = $currentQuery[$routeParam] ?? '';
+                                        $sVal = $secQuery[$routeParam] ?? '';
+                                        if ($cVal !== $sVal) {
+                                            $isActive = false;
+                                            break;
+                                        }
                                     }
                                 }
+                                
+                                if ($currentUrl === 'index.php' && $sec['SectionURL'] !== 'index.php') {
+                                    $isActive = false; // Prevent root index matching everything
+                                }
+                                
+                                if ($isActive) $groupIsActive = true;
+                                
+                                $processedSections[] = [
+                                    'sec' => $sec,
+                                    'isActive' => $isActive
+                                ];
                             }
                             
-                            if ($currentUrl === 'index.php' && $sec['SectionURL'] !== 'index.php') {
-                                $isActive = false; // Prevent root index matching everything
-                            }
+                            // 2. Render Group Header
+                            $groupId = "sidebar-group-" . $group['SectionGroupID'];
+                            $groupDisplayClass = $groupIsActive ? 'flex' : 'hidden';
+                            $iconRotateClass = $groupIsActive ? 'rotate-180' : '';
                             
-                            if ($isActive) $groupIsActive = true;
-                            
-                            $processedSections[] = [
-                                'sec' => $sec,
-                                'isActive' => $isActive
-                            ];
-                        }
-                        
-                        // 2. Render Group Header
-                        $groupId = "sidebar-group-" . $group['SectionGroupID'];
-                        $groupDisplayClass = $groupIsActive ? 'flex' : 'hidden';
-                        $iconRotateClass = $groupIsActive ? 'rotate-180' : '';
-                        
-                        echo '<button type="button" onclick="toggleSidebarGroup(\''.$groupId.'\')" class="w-full flex items-center justify-between px-6 py-3 mt-2 hover:bg-gray-50 transition-colors focus:outline-none group">';
-                        echo '<span class="text-[15px] font-bold text-gray-600 group-hover:text-primary transition-colors">'.htmlspecialchars($group['SectionGroupName']).'</span>';
-                        echo '<i class="ph ph-caret-down text-gray-400 transition-transform duration-300 '.$iconRotateClass.'" id="icon-'.$groupId.'"></i>';
-                        echo '</button>';
+                            echo '<button type="button" onclick="toggleSidebarGroup(\''.$groupId.'\')" class="w-full flex items-center justify-between px-6 py-3 mt-2 hover:bg-gray-50 transition-colors focus:outline-none group">';
+                            echo '<span class="text-[15px] font-bold text-gray-600 group-hover:text-primary transition-colors">'.htmlspecialchars($group['SectionGroupName']).'</span>';
+                            echo '<i class="ph ph-caret-down text-gray-400 transition-transform duration-300 '.$iconRotateClass.'" id="icon-'.$groupId.'"></i>';
+                            echo '</button>';
 
-                        // 3. Render Sub-items inside Collapsible Div
-                        echo '<div id="'.$groupId.'" class="'.$groupDisplayClass.' flex-col pb-2 space-y-1">';
-                        foreach($processedSections as $psec) {
-                            $sec = $psec['sec'];
-                            $activeClass = $psec['isActive'] ? 'active' : '';
-                            
-                            echo '<a href="'.$linkPrefix.$sec['SectionURL'].'" class="menu-item ml-4 pl-4 border-l border-gray-200 hover:border-gray-400 '.$activeClass.'">';
-                            echo '<i class="ph '.$sec['SectionIcon'].'"></i> '.htmlspecialchars($sec['SectionName']);
-                            echo '</a>';
-                        }
-                        echo '</div>';
-                    } // end if count > 0
-                } // end foreach groups
+                            // 3. Render Sub-items inside Collapsible Div
+                            echo '<div id="'.$groupId.'" class="'.$groupDisplayClass.' flex-col pb-2 space-y-1">';
+                            foreach($processedSections as $psec) {
+                                $sec = $psec['sec'];
+                                $activeClass = $psec['isActive'] ? 'active' : '';
+                                
+                                echo '<a href="'.$linkPrefix.$sec['SectionURL'].'" class="menu-item ml-4 pl-4 border-l border-gray-200 hover:border-gray-400 '.$activeClass.'">';
+                                echo '<i class="ph '.$sec['SectionIcon'].'"></i> '.htmlspecialchars($sec['SectionName']);
+                                echo '</a>';
+                            }
+                            echo '</div>';
+                        } // end if count > 0
+                    } // end foreach groups
+                }
             } // end if isset DB
             
 
@@ -313,12 +315,12 @@
                         echo '</a>';
                     }
 
-                    if ($canViewMenu('sitemap')) {
-                        $isActiveSite = (strpos($_SERVER['REQUEST_URI'], '/microsite/sitemap/') !== false) ? 'active' : '';
-                        echo '<a href="'.$linkPrefix.'microsite/sitemap/index.php" class="menu-item ml-4 pl-4 border-l border-gray-200 hover:border-gray-400 '.$isActiveSite.'">';
-                        echo '<i class="ph ph-tree-structure"></i> แผนผังเว็บไซต์';
-                        echo '</a>';
-                    }
+                    // if ($canViewMenu('sitemap')) {
+                    //     $isActiveSite = (strpos($_SERVER['REQUEST_URI'], '/microsite/sitemap/') !== false) ? 'active' : '';
+                    //     echo '<a href="'.$linkPrefix.'microsite/sitemap/index.php" class="menu-item ml-4 pl-4 border-l border-gray-200 hover:border-gray-400 '.$isActiveSite.'">';
+                    //     echo '<i class="ph ph-tree-structure"></i> แผนผังเว็บไซต์';
+                    //     echo '</a>';
+                    // }
                     
                     // Add more modules here as needed
                     echo '</div>'; // End microsite group div

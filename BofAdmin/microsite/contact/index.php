@@ -44,6 +44,10 @@ try {
             $groups[$g['GroupID']] = $g['GroupNameTH'];
         }
 
+        $stmtSlug = $DB->prepare("SELECT Slug FROM microsite_departments WHERE DeptID = ?");
+        $stmtSlug->execute([$deptID]);
+        $deptSlug = $stmtSlug->fetchColumn();
+
         $sqlBase = "SELECT * FROM microsite_contact WHERE DeptID = :deptId AND (DelData IS NULL OR DelData = 'N')";
         $params  = [':deptId' => $deptID];
 
@@ -68,7 +72,7 @@ try {
         }
 
         $page   = $_GET['page'] ?? 1;
-        $result = paginateWithCount($DB, $sqlBase, $params, $page, 25, 'OrderNo ASC, ContactID ASC');
+        $result = paginateWithCount($DB, $sqlBase, $params, $page, 25, 'ContactID DESC');
         $itemList = $result['data'];
     }
 } catch (PDOException $e) { $dbError = $e->getMessage(); }
@@ -150,7 +154,7 @@ try {
             <thead>
                 <tr>
                     <th width="50" class="text-center">
-                        <input type="checkbox" id="selectAll" class="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4 cursor-pointer">
+                      <input type="checkbox" id="selectAll" class="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4 cursor-pointer">
                     </th>
                     <th>ชื่อ-สกุล</th>
                     <th>กลุ่มติดต่อหน่วยงาน</th>
@@ -175,8 +179,8 @@ try {
                     </td>
                     <td>
                         <div class="font-semibold text-gray-800"><?php echo htmlspecialchars($item['Name'] ?? '-'); ?></div>
-                        <?php if (!empty($item['Title_TH'])): ?>
-                        <div class="text-xs text-gray-500 mt-0.5"><?php echo htmlspecialchars($item['Title_TH']); ?></div>
+                        <?php if (!empty($item['Title'])): ?>
+                        <div class="text-xs text-gray-500 mt-0.5"><?php echo htmlspecialchars($item['Title']); ?></div>
                         <?php endif; ?>
                     </td>
                     <td class="text-sm text-gray-600">
@@ -192,11 +196,11 @@ try {
                     </td>
                     <td>
                         <div class="flex justify-center gap-2">
-                            <?php /*  if ($canEdit): ?>
-                            <a href="form.php?id=<?php echo $item['ContactID']; ?>" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition-colors" title="แก้ไข">
-                                <i class="ph ph-pencil-simple text-lg"></i>
+                            <?php if ($canView): ?>
+                            <a href="view.php?id=<?php echo $item['ContactID']; ?>" class="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center hover:bg-green-100 transition-colors" title="ดูรายละเอียด">
+                                <i class="ph ph-eye text-lg"></i>
                             </a>
-                            <?php endif; */ ?>
+                            <?php endif; ?>
                             <?php if ($canDelete): ?>
                             <button type="button" onclick="confirmDelete(<?php echo $item['ContactID']; ?>)" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors" title="ลบ">
                                 <i class="ph ph-trash text-lg"></i>
@@ -211,19 +215,68 @@ try {
     </div>
 
     <!-- Pagination -->
-    <?php if (isset($result['pagination']) && $result['pagination']['total_pages'] > 1): ?>
-    <div class="mt-6 flex justify-between items-center">
+    <?php if (isset($result['pagination']) && $result['pagination']['total'] > 0): ?>
+    <?php 
+    $totalPages = $result['pagination']['total_pages'];
+    $totalRecords = $result['pagination']['total'];
+    $page = $page ?? 1;
+    ?>
+    <div class="mt-6 flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-xl border border-gray-100 gap-4">
         <div class="text-sm text-gray-500">
-            แสดงหน้า <?php echo $page ?? 1; ?> จาก <?php echo $result['pagination']['total_pages']; ?> (รวม <?php echo $result['pagination']['total']; ?> รายการ)
+            แสดงข้อมูลหน้า <?php echo $page; ?> จาก <?php echo $totalPages; ?> (ทั้งหมด <?php echo $totalRecords; ?> รายการ)
         </div>
-        <div class="flex gap-2">
-            <?php for ($i = 1; $i <= $result['pagination']['total_pages']; $i++): ?>
-                <a href="index.php?page=<?php echo $i; ?>&status=<?php echo urlencode($searchStatus ?? ''); ?>" 
-                   class="w-8 h-8 flex items-center justify-center rounded-lg border <?php echo $i == ($page ?? 1) ? 'bg-primary text-white border-primary' : 'bg-white text-gray-600 hover:bg-gray-50'; ?>">
+        <?php if ($totalPages > 1): ?>
+        <div class="flex gap-2 flex-wrap items-center">
+            <!-- First Page -->
+            <?php if ($page > 1): ?>
+                <a href="index.php?page=1&status=<?php echo urlencode($searchStatus ?? ''); ?>&keyword=<?php echo urlencode($searchKeyword ?? ''); ?>" 
+                   class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-primary transition-colors border border-gray-200" title="หน้าแรก">
+                    <i class="ph ph-caret-double-left text-sm"></i>
+                </a>
+                <a href="index.php?page=<?php echo $page - 1; ?>&status=<?php echo urlencode($searchStatus ?? ''); ?>&keyword=<?php echo urlencode($searchKeyword ?? ''); ?>" 
+                   class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-primary transition-colors border border-gray-200" title="หน้าก่อนหน้า">
+                    <i class="ph ph-caret-left text-sm"></i>
+                </a>
+            <?php else: ?>
+                <span class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed" title="หน้าแรก">
+                    <i class="ph ph-caret-double-left text-sm"></i>
+                </span>
+                <span class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed" title="หน้าก่อนหน้า">
+                    <i class="ph ph-caret-left text-sm"></i>
+                </span>
+            <?php endif; ?>
+
+            <!-- Page Numbers -->
+            <?php 
+            $startPage = max(1, $page - 2);
+            $endPage = min($totalPages, $page + 2);
+            for ($i = $startPage; $i <= $endPage; $i++): ?>
+                <a href="index.php?page=<?php echo $i; ?>&status=<?php echo urlencode($searchStatus ?? ''); ?>&keyword=<?php echo urlencode($searchKeyword ?? ''); ?>" 
+                   class="w-8 h-8 flex items-center justify-center rounded-lg border <?php echo $i == $page ? 'bg-primary text-white border-primary font-bold shadow-sm' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-primary transition-colors'; ?>">
                     <?php echo $i; ?>
                 </a>
             <?php endfor; ?>
+
+            <!-- Next Page -->
+            <?php if ($page < $totalPages): ?>
+                <a href="index.php?page=<?php echo $page + 1; ?>&status=<?php echo urlencode($searchStatus ?? ''); ?>&keyword=<?php echo urlencode($searchKeyword ?? ''); ?>" 
+                   class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-primary transition-colors border border-gray-200" title="หน้าถัดไป">
+                    <i class="ph ph-caret-right text-sm"></i>
+                </a>
+                <a href="index.php?page=<?php echo $totalPages; ?>&status=<?php echo urlencode($searchStatus ?? ''); ?>&keyword=<?php echo urlencode($searchKeyword ?? ''); ?>" 
+                   class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-primary transition-colors border border-gray-200" title="หน้าสุดท้าย">
+                    <i class="ph ph-caret-double-right text-sm"></i>
+                </a>
+            <?php else: ?>
+                <span class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed" title="หน้าถัดไป">
+                    <i class="ph ph-caret-right text-sm"></i>
+                </span>
+                <span class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed" title="หน้าสุดท้าย">
+                    <i class="ph ph-caret-double-right text-sm"></i>
+                </span>
+            <?php endif; ?>
         </div>
+        <?php endif; ?>
     </div>
     <?php endif; ?>
 </div>

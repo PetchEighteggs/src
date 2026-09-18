@@ -119,6 +119,11 @@ try {
         </div>
         
         <div class="flex gap-2 items-center">
+            <?php if ($canEdit): ?>
+            <a href="sort.php" class="px-4 py-2 bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+                <i class="ph ph-arrows-down-up"></i> จัดเรียงลำดับ
+            </a>
+            <?php endif; ?>
             <?php if ($canAdd): ?>
             <a href="group.php" class="px-4 py-2 border border-primary/20 text-primary bg-white hover:bg-primary hover:text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
                 <i class="ph ph-folder-open"></i> จัดการหมวดหมู่มัลติมีเดีย
@@ -170,7 +175,7 @@ try {
                 <thead>
                     <tr class="bg-gray-50/80 text-gray-655 text-sm border-b border-gray-100">
                         <th class="py-4 px-6 font-semibold w-12 text-center">
-                            <input type="checkbox" id="selectAll" class="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4 cursor-pointer">
+                          <input type="checkbox" id="selectAll" class="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4 cursor-pointer">
                         </th>
                         <th class="py-4 px-6 font-semibold w-40 text-center">รูปภาพหน้าปก</th>
                         <th class="py-4 px-6 font-semibold">หัวข้อ</th>

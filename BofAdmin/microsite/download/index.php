@@ -141,9 +141,14 @@ try {
             <div class="text-sm text-gray-500 mt-1">หน่วยงาน: <span class="font-semibold text-gray-700"><?php echo htmlspecialchars($_SESSION['ActiveDeptName'] ?? ''); ?></span></div>
         </div>
         <div class="flex gap-2 items-center">
+            <?php if ($canEdit): ?>
+            <a href="sort.php" class="px-4 py-2 bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm whitespace-nowrap">
+                <i class="ph ph-arrows-down-up text-lg"></i> จัดเรียงลำดับ
+            </a>
+            <?php endif; ?>
             <?php if ($canEdit || $canAdd): ?>
             <a href="group.php" class="px-4 py-2 border border-primary/20 text-primary bg-white hover:bg-primary hover:text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm whitespace-nowrap">
-                <i class="ph ph-folder-open text-lg"></i> หมวดหมู่หลัก
+                <i class="ph ph-folder-open text-lg"></i> จัดการหมวดหมู่หลัก
             </a>
             <?php endif; ?>
             <?php if ($canAdd): ?>

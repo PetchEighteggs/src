@@ -18,7 +18,7 @@ try {
 
     // Fetch Menus
     $stmt = $DB->prepare("
-        SELECT MenuID, MenuNameTH, MenuNameEN, URL, Target 
+        SELECT MenuID, MenuNameTH, MenuNameEN, URL, Target, ModuleType 
         FROM microsite_menus 
         WHERE DeptID = ? AND IsActive = 'Y' AND DelData != 'Y'
         ORDER BY OrderNo ASC
@@ -42,8 +42,7 @@ try {
         $submenusByMenu[$sub['MenuID']][] = [
             'id' => $sub['SubMenuID'],
             'title' => $sub['SubMenuNameTH'],
-            'url' => $sub['URL'] ?: '#',
-            'target' => $sub['Target'] ?? '_self'
+            'url' => $sub['URL'] ?: '#'
         ];
     }
 
@@ -54,7 +53,7 @@ try {
             'id' => $menuId,
             'title' => $menu['MenuNameTH'],
             'url' => $menu['URL'] ?: '#',
-            'target' => $menu['Target'] ?? '_self',
+            'module_type' => $menu['ModuleType'] ?? '',
             'submenus' => $submenusByMenu[$menuId] ?? []
         ];
     }

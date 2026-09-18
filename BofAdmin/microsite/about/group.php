@@ -11,8 +11,15 @@ if (empty($deptID)) {
 // Permission Check
 $userGroupID = $_SESSION['GroupID'] ?? '';
 $hasAccess = false;
+$canEdit = false;
+$canAdd = false;
+$canDelete = false;
+
 if ($userGroupID === 'A') {
     $hasAccess = true;
+    $canEdit = true;
+    $canAdd = true;
+    $canDelete = true;
 } else if ($userGroupID === 'S') {
     $staffID = $_SESSION['StaffID'] ?? 0;
     require_once('../../includes/microsite_permission.php');
@@ -21,6 +28,7 @@ if ($userGroupID === 'A') {
     $canDelete = checkMicrositeMenuPermission($DB, $staffID, $deptID, 'about', 'CanDelete');
     $hasAccess = ($canEdit || $canAdd);
 }
+
 if (!$hasAccess) {
     echo "<script>alert('คุณไม่มีสิทธิ์จัดการหมวดหมู่เกี่ยวกับหน่วยงาน'); window.location.href = 'index.php';</script>";
     exit;
@@ -57,7 +65,7 @@ try {
 
         $sql = $sqlBase;
         $page = $_GET['page'] ?? 1;
-        $result = paginateWithCount($DB, $sql, $params, $page, 25, 'GroupID DESC');
+        $result = paginateWithCount($DB, $sql, $params, $page, 25, 'OrderNo ASC, GroupID ASC');
         $itemList = $result['data'];
     }
 } catch (PDOException $e) {
@@ -108,6 +116,11 @@ try {
         </div>
         
         <div class="flex flex-wrap items-center gap-3">
+            <?php if ($canEdit): ?>
+            <a href="sort.php" class="px-4 py-2 bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 h-10">
+                <i class="ph ph-arrows-down-up text-lg"></i> จัดเรียงลำดับ
+            </a>
+            <?php endif; ?>
             <?php if ($canAdd): ?>
             <a href="group_form.php" class="btn-primary h-10 px-6 flex items-center justify-center gap-2 rounded-lg font-medium transition-colors">
                 <i class="ph ph-plus-circle text-lg"></i> เพิ่มหมวดหมู่

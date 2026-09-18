@@ -5,6 +5,24 @@ if (!defined('_VALID_ACCESS')) {
 }
 
 /**
+ * Set CORS Headers dynamically
+ */
+function setCorsHeaders() {
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    
+    // Allow localhost, 127.0.0.1 (with any port) and the main website
+    if (preg_match('/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/', $origin) || $origin === 'https://www2.dgr.go.th') {
+        header('Access-Control-Allow-Origin: ' . $origin);
+    } else {
+        header('Access-Control-Allow-Origin: https://www2.dgr.go.th');
+    }
+    
+    header('Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE');
+    header('Access-Control-Allow-Headers: Content-Type, Authorization');
+    header('Access-Control-Allow-Credentials: true');
+}
+
+/**
  * Send JSON response
  * 
  * @param array $data The data payload
@@ -16,9 +34,7 @@ function sendResponse($data = null, $code = 200, $message = 'Success') {
     header('Content-Type: application/json; charset=utf-8');
     
     // CORS headers
-    header('Access-Control-Allow-Origin: *');
-    header('Access-Control-Allow-Methods: GET, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, Authorization');
+    setCorsHeaders();
 
     if ($data !== null) {
         // Just return the raw data directly for v2 to maintain v1 backward compatibility in schema format

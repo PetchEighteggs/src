@@ -667,7 +667,7 @@
         group: 'ติดต่อหน่วยงาน',
         items: [
             { id: 'contact', name: 'ติดต่อหน่วยงาน', desc: 'ดึงรายชื่อข้อมูลสำหรับติดต่อหน่วยงาน', file: 'contact/', method: 'GET', params: [{ key: 'slug', default: defaultSlug }, { key: 'group_id', default: '' }] },
-            { id: 'contact_submit', name: 'ส่งข้อความติดต่อ', desc: 'API สำหรับส่งข้อความแบบฟอร์มติดต่อเรา', file: 'contact/', method: 'POST', params: [{ key: 'slug', default: defaultSlug }, { key: 'title', default: 'หัวข้อ' }, { key: 'name', default: 'ชื่อผู้ติดต่อ' }, { key: 'email', default: 'test@example.com' }, { key: 'tel', default: '0812345678' }, { key: 'detail', default: 'รายละเอียด', type: 'textarea' }, { key: 'group_id', default: '' }] },
+            { id: 'contact_submit', name: 'ส่งข้อความติดต่อ', desc: 'API สำหรับส่งข้อความแบบฟอร์มติดต่อเรา (รองรับไฟล์แนบ)', file: 'contact/', method: 'POST', params: [{ key: 'slug', default: defaultSlug }, { key: 'title', default: 'หัวข้อ' }, { key: 'name', default: 'ชื่อผู้ติดต่อ' }, { key: 'email', default: 'test@example.com' }, { key: 'tel', default: '0812345678' }, { key: 'detail', default: 'รายละเอียด', type: 'textarea' }, { key: 'group_id', default: '' }, { key: 'file', default: '', type: 'file', desc: 'ไฟล์แนบ (รองรับ jpg, jpeg, png, pdf, doc, docx)' }] },
             { id: 'contact_categories', name: 'หมวดหมู่ติดต่อหน่วยงาน', desc: 'ดึงกลุ่มหมวดหมู่แผนกผู้ติดต่อ', file: 'categories/', method: 'GET', params: [{ key: 'slug', default: defaultSlug }, { key: 'module', default: 'contact', hidden: true }] }
         ]
     },
@@ -676,8 +676,8 @@
         items: [
             { id: 'departments_list', name: 'รายชื่อหน่วยงานทั้งหมด', desc: 'ดึงข้อมูลของหน่วยงานทั้งหมดในระบบ', file: 'departments/', method: 'GET', params: [{ key: 'action', default: 'list', hidden: true }] },
             { id: 'departments', name: 'ข้อมูลหน่วยงาน (Departments)', desc: 'ดึงข้อมูลของหน่วยงานปัจจุบัน', file: 'departments/', method: 'GET', params: [{ key: 'action', default: 'get', desc: 'list หรือ get', readonly: true }, { key: 'slug', default: defaultSlug }] },
-            { id: 'menus', name: 'เมนูเว็บไซต์', desc: 'ดึงโครงสร้างเมนูหลักและเมนูย่อยของเว็บไซต์', file: 'menus/', method: 'GET', params: [{ key: 'slug', default: defaultSlug }] },
-            { id: 'sitemap_categories', name: 'แผนผังเว็บไซต์ (Sitemap)', desc: 'ดึงหมวดหมู่โครงสร้าง Sitemap', file: 'categories/', method: 'GET', params: [{ key: 'slug', default: defaultSlug }, { key: 'module', default: 'sitemap', hidden: true }] }
+            { id: 'menus', name: 'เมนูเว็บไซต์ (Header)', desc: 'ดึงโครงสร้างเมนูหลักและเมนูย่อยของเว็บไซต์ด้านบน', file: 'menus/', method: 'GET', params: [{ key: 'slug', default: defaultSlug }] },
+            { id: 'sidebar_menus', name: 'เมนูซ้ายมือ (Sidebar)', desc: 'ดึงโครงสร้างเมนูซ้ายมือทุกโมดูล', file: 'sidebar/', method: 'GET', params: [{ key: 'slug', default: defaultSlug }] }
         ]
     }
 ];
@@ -805,6 +805,8 @@
                 let inputHtml = '';
                 if (p.type === 'textarea') {
                     inputHtml = `<textarea id="param-${p.key}" oninput="updateUrl(this.id)" rows="2">${defaultValue}</textarea>`;
+                } else if (p.type === 'file') {
+                    inputHtml = `<input type="file" id="param-${p.key}" onchange="updateUrl(this.id)" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">`;
                 } else {
                     inputHtml = `<input type="text" id="param-${p.key}" value="${defaultValue}" autocomplete="off" oninput="updateUrl(this.id)" ${p.readonly ? 'readonly' : ''}>`;
                 }
@@ -839,12 +841,19 @@
             let bodyObj = {};
 
             currentEndpoint.params.forEach(p => {
-                const val = document.getElementById(`param-${p.key}`).value;
-                if (val !== '') {
-                    if (currentEndpoint.method === 'GET') {
-                        queryParams.push(`${p.key}=${encodeURIComponent(val)}`);
-                    } else {
-                        bodyObj[p.key] = val;
+                if (p.type === 'file') {
+                    const input = document.getElementById(`param-${p.key}`);
+                    if (input && input.files.length > 0) {
+                        bodyObj[p.key] = '[File Object]';
+                    }
+                } else {
+                    const val = document.getElementById(`param-${p.key}`).value;
+                    if (val !== '') {
+                        if (currentEndpoint.method === 'GET') {
+                            queryParams.push(`${p.key}=${encodeURIComponent(val)}`);
+                        } else {
+                            bodyObj[p.key] = val;
+                        }
                     }
                 }
             });
@@ -869,19 +878,22 @@
             let code = '';
             
             if (currentEndpoint.method === 'GET') {
-                code = `fetch('${fullUrl}')
-  .then(response => response.json())
-  .then(data => console.log(data));`;
+                code = `fetch('${fullUrl}')\n  .then(response => response.json())\n  .then(data => console.log(data));`;
             } else {
-                code = `fetch('${fullUrl}', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify(${JSON.stringify(bodyObj, null, 2)})
-})
-.then(response => response.json())
-.then(data => console.log(data));`;
+                const hasFile = currentEndpoint.params.some(p => p.type === 'file');
+                if (hasFile) {
+                    code = `const formData = new FormData();\n`;
+                    currentEndpoint.params.forEach(p => {
+                        if (p.type === 'file') {
+                            code += `// formData.append('${p.key}', fileInput.files[0]);\n`;
+                        } else {
+                            if (bodyObj[p.key]) code += `formData.append('${p.key}', '${bodyObj[p.key]}');\n`;
+                        }
+                    });
+                    code += `\nfetch('${fullUrl}', {\n  method: 'POST',\n  body: formData\n})\n.then(response => response.json())\n.then(data => console.log(data));`;
+                } else {
+                    code = `fetch('${fullUrl}', {\n  method: 'POST',\n  headers: {\n    'Content-Type': 'application/json'\n  },\n  body: JSON.stringify(${JSON.stringify(bodyObj, null, 2)})\n})\n.then(response => response.json())\n.then(data => console.log(data));`;
+                }
             }
             
             document.getElementById('exampleCode').innerText = code;
@@ -909,13 +921,27 @@
             };
             
             if (currentEndpoint.method === 'POST') {
-                let bodyObj = {};
-                currentEndpoint.params.forEach(p => {
-                    const val = document.getElementById(`param-${p.key}`).value;
-                    if (val !== '') bodyObj[p.key] = val;
-                });
-                fetchOptions.headers['Content-Type'] = 'application/json';
-                fetchOptions.body = JSON.stringify(bodyObj);
+                const hasFile = currentEndpoint.params.some(p => p.type === 'file');
+                if (hasFile) {
+                    let formData = new FormData();
+                    currentEndpoint.params.forEach(p => {
+                        const input = document.getElementById(`param-${p.key}`);
+                        if (p.type === 'file') {
+                            if (input && input.files.length > 0) formData.append(p.key, input.files[0]);
+                        } else {
+                            if (input.value !== '') formData.append(p.key, input.value);
+                        }
+                    });
+                    fetchOptions.body = formData;
+                } else {
+                    let bodyObj = {};
+                    currentEndpoint.params.forEach(p => {
+                        const val = document.getElementById(`param-${p.key}`).value;
+                        if (val !== '') bodyObj[p.key] = val;
+                    });
+                    fetchOptions.headers['Content-Type'] = 'application/json';
+                    fetchOptions.body = JSON.stringify(bodyObj);
+                }
             }
 
             const startTime = performance.now();

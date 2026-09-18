@@ -63,7 +63,7 @@ try {
     } elseif ($searchStatus === 'inactive') {
         $sql .= " AND IsActive != 'Y'";
     }
-    $sql .= " ORDER BY OrderNo DESC, PopupID DESC";
+    $sql .= " ORDER BY OrderNo ASC, PopupID DESC";
     
     $stmt = $DB->prepare($sql);
     $stmt->execute($params);
@@ -116,12 +116,19 @@ $deptSlug = $stmtSlug->fetchColumn();
             </h2>
             <div class="text-sm text-gray-500 mt-1">หน่วยงาน: <span class="font-semibold text-gray-700"><?php echo htmlspecialchars($_SESSION['ActiveDeptName'] ?? ''); ?></span></div>
         </div>
-        <?php if ($canAdd): ?>
-        <a href="form.php" class="btn-primary px-4 py-2 flex items-center gap-2 text-sm whitespace-nowrap">
-            <i class="ph ph-plus-circle text-lg"></i>
-            เพิ่ม Popup ใหม่
-        </a>
-        <?php endif; ?>
+        <div class="flex gap-2 items-center">
+            <?php if ($canEdit): ?>
+            <a href="sort.php" class="px-4 py-2 bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm whitespace-nowrap">
+                <i class="ph ph-arrows-down-up text-lg"></i> จัดเรียงลำดับ
+            </a>
+            <?php endif; ?>
+            <?php if ($canAdd): ?>
+            <a href="form.php" class="btn-primary px-4 py-2 flex items-center gap-2 text-sm whitespace-nowrap">
+                <i class="ph ph-plus-circle text-lg"></i>
+                เพิ่ม Popup ใหม่
+            </a>
+            <?php endif; ?>
+        </div>
     </div>
 
     <form method="GET" class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6">

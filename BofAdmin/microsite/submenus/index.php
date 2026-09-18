@@ -82,7 +82,7 @@ try {
 					$params[':status'] = $searchStatus;
         }
 
-        $sqlBase .= " ORDER BY sm.MenuID ASC, sm.OrderNo ASC, sm.SubMenuID DESC";
+        $sqlBase .= " ORDER BY sm.MenuID ASC, sm.OrderNo ASC, sm.SubMenuID ASC";
 
         // Pagination
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -146,7 +146,11 @@ try {
         </div>
         
         <div class="flex items-center gap-3">
-           
+            <?php if ($canEdit): ?>
+            <a href="../menus/sort.php" class="px-4 py-2 bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 h-10">
+                <i class="ph ph-arrows-down-up text-lg"></i> จัดเรียงลำดับ
+            </a>
+            <?php endif; ?>
             <?php if ($canAdd): ?>
             <a href="form.php?action=add" class="btn-primary h-10 px-6 flex items-center justify-center gap-2 rounded-lg font-medium transition-colors">
                 <i class="ph ph-plus-circle text-lg"></i> เพิ่มเมนูย่อย
@@ -240,12 +244,12 @@ try {
 												<?php echo htmlspecialchars($row['SubMenuNameEN']); ?>
 										</div>
 										<?php endif; ?>
-										<?php if(!empty($row['URL'] != "" && $row['URL'] != "#")): ?>
+										<?php /* if(!empty($row['URL'] != "" && $row['URL'] != "#")): ?>
 										<div class="text-sm text-gray-500 mt-1 flex items-center gap-1 truncate max-w-sm">
 											<i class="ph ph-link text-gray-400"></i>
 											<?php echo htmlspecialchars($row['URL']); ?>
 										</div>
-										<?php endif; ?>
+										<?php endif; ?> */ ?>
 									</td>
 									<td class="py-4 px-6">
 										<div class="font-medium text-gray-800 text-base mb-1">
