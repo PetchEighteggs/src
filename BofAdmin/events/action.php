@@ -8,11 +8,12 @@ include_once('../../config/func.class.php');
 require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 $StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? '';
+$action = $_POST['action'] ?? '';
     
     $uploadDir = $sServerImgDir;
     if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
@@ -115,8 +116,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         } catch (PDOException $e) { die("Error: " . $e->getMessage()); }
     }
-} elseif (isset($_GET['action']) && $_GET['action'] === 'delete') {
-    $id = $_GET['id'];
+elseif ($action === 'delete') {
+    $id = $_POST['id'] ?? 0;
     try {
         $stmt = $DB->prepare("UPDATE events SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE EventID=?");
         $stmt->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $id]);
@@ -128,8 +129,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (PDOException $e) {
         die("Error: " . $e->getMessage());
     }
-} elseif (isset($_GET['action']) && $_GET['action'] === 'bulk_delete') {
-    $ids = $_GET['ids'] ?? '';
+} elseif ($action === 'bulk_delete') {
+    $ids = $_POST['ids'] ?? '';
     if (!empty($ids)) {
         try {
             $idArray = array_filter(explode(',', $ids), 'is_numeric');
@@ -148,13 +149,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             die("Error: " . $e->getMessage());
         }
     }
-} elseif (isset($_GET['action']) && in_array($_GET['action'], ['bulk_active', 'bulk_inactive'])) {
-    $ids = $_GET['ids'] ?? '';
+} elseif (in_array($action, ['bulk_active', 'bulk_inactive'], true)) {
+    $ids = $_POST['ids'] ?? '';
     if (!empty($ids)) {
         try {
             $idArray = array_filter(explode(',', $ids), 'is_numeric');
             if (!empty($idArray)) {
-                $status = ($_GET['action'] === 'bulk_active') ? 'Y' : 'N';
+                $status = ($action === 'bulk_active') ? 'Y' : 'N';
                 $placeholders = implode(',', array_fill(0, count($idArray), '?'));
                 $params = array_merge([$status], $idArray);
                 
