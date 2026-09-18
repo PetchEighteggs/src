@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดเรียงลำดับการ์ดหน้าหลัก';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 ?>
 <link rel="stylesheet" href="../assets/css/bgColorClass.css">
 <div class="glass-panel p-6">
@@ -22,6 +23,7 @@ include_once('../includes/header.php');
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script>
+const csrfToken = <?php echo json_encode(bofSecurityCsrfToken(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 const list = document.getElementById('sortable');
 document.addEventListener('DOMContentLoaded', loadItems);
 
@@ -80,7 +82,7 @@ function saveOrder() {
     const order = Array.from(list.children).map((row, index) => ({id:Number(row.dataset.id), order:index + 1}));
     fetch('ajax_save_order.php', {
         method: 'POST',
-        headers: {'Content-Type':'application/json', 'X-Requested-With':'XMLHttpRequest'},
+        headers: {'Content-Type':'application/json', 'X-Requested-With':'XMLHttpRequest', 'X-CSRF-Token':csrfToken},
         body: JSON.stringify({order})
     })
         .then(response => response.json())

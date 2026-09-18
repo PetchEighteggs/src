@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'ข้อมูลการ์ดหน้าหลัก';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $cardId = max(0, (int)mosGetParam($_GET, 'CardID', 0));
 $card = [
@@ -35,6 +36,7 @@ if (!empty($card['Image'])) {
 
 <div class="glass-panel p-6">
     <form action="action.php" method="post" enctype="multipart/form-data" id="homeCardForm" onsubmit="showLoading()">
+        <?php echo bofSecurityCsrfField(); ?>
         <input type="hidden" name="action" value="<?php echo $cardId > 0 ? 'update' : 'create'; ?>">
         <input type="hidden" name="CardID" value="<?php echo $cardId; ?>">
 

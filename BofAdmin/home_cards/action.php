@@ -11,11 +11,13 @@ require_once('../includes/action_security.php');
 
 $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 $staffId = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 $staffIp = $_SERVER['REMOTE_ADDR'] ?? '';
-$action = (string)mosGetParam($_REQUEST, 'action', '');
-$cardId = (int)mosGetParam($_REQUEST, 'CardID', 0);
+$action = (string)mosGetParam($_POST, 'action', '');
+$cardId = (int)mosGetParam($_POST, 'CardID', 0);
 
 function homeCardsRedirect($status = '', $message = '')
 {

@@ -6,16 +6,14 @@ if (session_status() === PHP_SESSION_NONE) {
 include_once('../../configuration.php');
 include_once('../../config/ms_com.php');
 include_once('../../config/ms.class.php');
+require_once('../includes/action_security.php');
 
 header('Content-Type: application/json; charset=utf-8');
 
-if (empty($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    http_response_code(401);
-    echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
-    exit;
-}
-
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['response' => 'json', 'login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST'], ['response' => 'json']);
+bofSecurityRequireCsrf(null, '_csrf_token', ['response' => 'json']);
 $MS = new MS($DB);
 if (($_SESSION['GroupID'] ?? '') === 'S') {
     $permStmt = $DB->prepare("SELECT sp.CanEdit FROM staff_permission sp

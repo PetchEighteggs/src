@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดการการ์ดหน้าหลัก';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $search = trim((string)mosGetParam($_GET, 'search', ''));
 $status = (string)mosGetParam($_GET, 'status', '');
@@ -115,6 +116,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     <?php if (!empty($userPermissions['edit']) || !empty($userPermissions['delete'])): ?>
     <form id="bulkForm" action="action.php" method="post" class="hidden items-center flex-wrap gap-3 mb-5 bg-gray-50 p-4 rounded-xl border border-gray-200">
+        <?php echo bofSecurityCsrfField(); ?>
         <input type="hidden" name="ids" id="bulkIds">
         <select name="action" id="bulkAction" class="border border-gray-300 rounded-lg px-4 py-2 bg-white">
             <option value="">-- เลือกการจัดการ --</option>
@@ -187,6 +189,12 @@ document.addEventListener('DOMContentLoaded', function () {
     <?php endif; ?>
 </div>
 
+<form action="action.php" method="post" id="deleteCardForm" class="hidden">
+    <?php echo bofSecurityCsrfField(); ?>
+    <input type="hidden" name="action" value="delete">
+    <input type="hidden" name="CardID" id="deleteCardId" value="">
+</form>
+
 <script>
 function checkedIds() { return Array.from(document.querySelectorAll('.row-check:checked')).map(el => el.value); }
 function updateBulk() {
@@ -200,7 +208,10 @@ function updateBulk() {
 function toggleAll(source) { document.querySelectorAll('.row-check').forEach(el => el.checked = source.checked); updateBulk(); }
 function removeCard(id) {
     AdminDialog.fire({title:'ยืนยันการลบ?', text:'รายการจะถูกซ่อนด้วย Soft delete และไม่ถูกลบออกจากฐานข้อมูล', icon:'warning', showCancelButton:true, confirmButtonColor:'#dc2626', confirmButtonText:'ยืนยันการลบ', cancelButtonText:'ยกเลิก'}).then(result => {
-        if (result.isConfirmed) window.location.href = `action.php?action=delete&CardID=${id}`;
+        if (result.isConfirmed) {
+            document.getElementById('deleteCardId').value = id;
+            document.getElementById('deleteCardForm').submit();
+        }
     });
 }
 function submitBulk() {
