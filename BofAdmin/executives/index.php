@@ -6,6 +6,7 @@ if (isset($_GET['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVE
 }
 $pageTitle = 'จัดการข้อมูลผู้บริหาร';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $searchKeyword = $_GET['keyword'] ?? '';
 $filterGroup = $_GET['group'] ?? '';
@@ -246,6 +247,13 @@ try {
         <span class="text-sm text-gray-500 ml-2" id="bulkCountText"></span>
     </div>
     <?php endif; ?>
+
+    <form id="executiveActionForm" action="action.php" method="POST" class="hidden">
+        <?php echo bofSecurityCsrfField(); ?>
+        <input type="hidden" name="action" id="executiveActionName" value="">
+        <input type="hidden" name="id" id="executiveActionId" value="">
+        <input type="hidden" name="ids" id="executiveActionIds" value="">
+    </form>
 
     <?php if (defined('IS_AJAX')) { ob_clean(); } ?>
     <div id="executivesTableContainer" class="space-y-6">
@@ -701,7 +709,10 @@ function executeBulkAction() {
     }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'action.php?action=' + actionStr + '&ids=' + ids;
+            document.getElementById('executiveActionName').value = actionStr;
+            document.getElementById('executiveActionId').value = '';
+            document.getElementById('executiveActionIds').value = ids;
+            document.getElementById('executiveActionForm').submit();
         }
     });
 }
@@ -718,7 +729,10 @@ function deleteItem(id) {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = `action.php?action=delete&id=${id}`;
+            document.getElementById('executiveActionName').value = 'delete';
+            document.getElementById('executiveActionId').value = id;
+            document.getElementById('executiveActionIds').value = '';
+            document.getElementById('executiveActionForm').submit();
         }
     });
 }

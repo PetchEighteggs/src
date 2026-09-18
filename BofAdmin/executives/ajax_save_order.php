@@ -2,23 +2,22 @@
 define('_VALID_ACCESS', 1);
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
-    exit;
-}
-
 include_once('../../configuration.php');
 include_once('../../config/ms_com.php');
 include_once('../../config/ms.class.php');
 include_once('../../config/func.class.php');
+require_once('../includes/action_security.php');
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 
 $DB = mosConnectPDO();
 if (!$DB) {
     echo json_encode(['status' => 'error', 'message' => 'DB Connection Failed']);
     exit;
 }
+bofSecurityRequireAuth($DB, ['response' => 'json', 'login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST'], ['response' => 'json']);
+bofSecurityRequireCsrf(null, '_csrf_token', ['response' => 'json']);
 
 // Get JSON POST data
 $input = file_get_contents('php://input');

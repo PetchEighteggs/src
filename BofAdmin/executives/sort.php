@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดเรียงลำดับผู้บริหาร';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 // No need to fetch departments anymore for sort
 
@@ -55,6 +56,7 @@ include_once('../includes/header.php');
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    const csrfToken = <?php echo json_encode(bofSecurityCsrfToken(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     const filterGroup = document.getElementById('filter_group');
     const btnLoad = document.getElementById('btnLoad');
     const sortableList = document.getElementById('sortableList');
@@ -154,6 +156,8 @@ include_once('../includes/header.php');
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-Token': csrfToken,
             },
             body: JSON.stringify({ order: orderData })
         })
