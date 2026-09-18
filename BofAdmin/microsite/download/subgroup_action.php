@@ -9,7 +9,9 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once('../../../configuration.php');
 require_once('../../../config/ms_com.php');
 require_once('../../../config/ms.class.php');
+require_once('../../includes/action_security.php');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../../login.php']);
 $MS = new MS($DB);
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
