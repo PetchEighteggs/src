@@ -4,17 +4,13 @@ session_start();
 require_once('../../configuration.php');
 require_once('../../config/ms_com.php');
 require_once('../../config/ms.class.php');
+require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 $MS = new MS($DB);
+$StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
 $action = $_REQUEST['action'] ?? '';
-
-
-// Verify Access
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    header("Location: ../login.php");
-    exit;
-}
 
 
 
@@ -39,7 +35,7 @@ if ($action == 'save') {
     $orderNo = isset($_POST['OrderNo']) ? $_POST['OrderNo'] : null;
     
     try {
-        $adminId = $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1;
+        $adminId = $StaffID;
         $ip = $_SERVER['REMOTE_ADDR'] ?? '';
         
         if ($downloadID > 0) {
@@ -71,7 +67,7 @@ if ($action == 'save') {
     $id = $_GET['id'] ?? 0;
     if ($id > 0) {
         try {
-            $adminId = $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1;
+            $adminId = $StaffID;
             $ip = $_SERVER['REMOTE_ADDR'] ?? '';
             $stmt = $DB->prepare("UPDATE faq SET DelData = 'Y', DelDataDate = NOW(), DelDataBy = ?, DelDataIP = ? WHERE DocID = ?");
             $stmt->execute([$adminId, $ip, $id]);
@@ -87,7 +83,7 @@ if ($action == 'save') {
         $idArray = array_map('intval', explode(',', $ids));
         if (count($idArray) > 0) {
             $placeholders = implode(',', array_fill(0, count($idArray), '?'));
-            $adminId = $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1;
+            $adminId = $StaffID;
             $ip = $_SERVER['REMOTE_ADDR'] ?? '';
             
             if ($action == 'bulk_active') {

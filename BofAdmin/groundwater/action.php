@@ -4,16 +4,13 @@ session_start();
 require_once('../../configuration.php');
 require_once('../../config/ms_com.php');
 require_once('../../config/ms.class.php');
+require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 $MS = new MS($DB);
+$StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
 $action = $_REQUEST['action'] ?? '';
-
-// Verify Access
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    header("Location: ../login.php");
-    exit;
-}
 
 $uploadDir = $sServerDirFile . "groundwater/";
 if (!is_dir($uploadDir)) {
@@ -117,14 +114,14 @@ if ($action == 'save') {
                     $newName = "dl_" . time() . "_" . uniqid() . "." . $ext;
                     if (move_uploaded_file($_FILES['UploadFiles']['tmp_name'][$i], $uploadDir . $newName)) {
                         $stmtAtt = $DB->prepare("INSERT INTO groundwater_doc_attachments (DocID, FilePath, FileType, FileSize, Downloads, OrderNo, CreateDate, CreateBy, CreateIP, DelData) VALUES (?, ?, ?, ?, 0, 0, NOW(), ?, ?, 'N')");
-                        $stmtAtt->execute([$docIDToUse, $newName, $ext, $size, $_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']]);
+                        $stmtAtt->execute([$docIDToUse, $newName, $ext, $size, $StaffID, $_SERVER['REMOTE_ADDR']]);
                     }
                 }
             }
         }
 
         $logAction = ($downloadID > 0 ? 'แก้ไขประกอบกิจการน้ำบาดาล ID: ' : 'เพิ่มประกอบกิจการน้ำบาดาล ID: ') . $docIDToUse;
-        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 10, ($downloadID > 0 ? $downloadID : $DB->lastInsertId()));
+        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $StaffID, '', 10, ($downloadID > 0 ? $downloadID : $DB->lastInsertId()));
         header("Location: index.php");
         exit;
     } catch (PDOException $e) {
@@ -135,11 +132,11 @@ if ($action == 'save') {
     $id = $_GET['id'] ?? 0;
     if ($id > 0) {
         try {
-            $DB->prepare("UPDATE groundwater_doc_attachments SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE DocID = ?")->execute([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR'], $id]);
+            $DB->prepare("UPDATE groundwater_doc_attachments SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE DocID = ?")->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $id]);
             
             $stmt = $DB->prepare("UPDATE groundwater_docs SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE DocID = ?");
-            $stmt->execute([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR'], $id]);
-            $MS->StaffLog('ลบประกอบกิจการน้ำบาดาล ID: ' . $id, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 10, $id);
+            $stmt->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $id]);
+            $MS->StaffLog('ลบประกอบกิจการน้ำบาดาล ID: ' . $id, $_SERVER['REQUEST_URI'], $StaffID, '', 10, $id);
             header("Location: index.php");
             exit;
         } catch (PDOException $e) {
@@ -165,12 +162,12 @@ if ($action == 'save') {
                 $stmt->execute($params);
             } else if ($action == 'bulk_delete') {
                 $params = $idArray;
-                $DB->prepare("UPDATE groundwater_doc_attachments SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE DocID IN ($placeholders)")->execute(array_merge([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']], $params));
+                $DB->prepare("UPDATE groundwater_doc_attachments SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE DocID IN ($placeholders)")->execute(array_merge([$StaffID, $_SERVER['REMOTE_ADDR']], $params));
                 
                 $sqlDel = "UPDATE groundwater_docs SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE DocID IN ($placeholders)";
                 $stmtDel = $DB->prepare($sqlDel);
-                $stmtDel->execute(array_merge([$_SESSION['admin_id'] ?? 1, $_SERVER['REMOTE_ADDR']], $params));
-                $MS->StaffLog('ลบประกอบกิจการน้ำบาดาล Bulk ID: ' . $ids, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 10, 0);
+                $stmtDel->execute(array_merge([$StaffID, $_SERVER['REMOTE_ADDR']], $params));
+                $MS->StaffLog('ลบประกอบกิจการน้ำบาดาล Bulk ID: ' . $ids, $_SERVER['REQUEST_URI'], $StaffID, '', 10, 0);
             }
         }
     }
