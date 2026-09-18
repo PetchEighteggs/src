@@ -6,6 +6,7 @@ if (isset($_GET['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVE
 }
 $pageTitle = 'จัดการนามสงเคราะห์';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $searchKeyword = $_GET['keyword'] ?? '';
 $deptFilter    = $_GET['dept'] ?? '';
@@ -128,6 +129,13 @@ try {
         <span class="text-sm text-gray-500 ml-2" id="bulkCountText"></span>
     </div>
     <?php endif; ?>
+
+    <form id="orgDirectoryActionForm" action="action.php" method="POST" class="hidden">
+        <?php echo bofSecurityCsrfField(); ?>
+        <input type="hidden" name="action" id="orgDirectoryActionName" value="">
+        <input type="hidden" name="id" id="orgDirectoryActionId" value="">
+        <input type="hidden" name="ids" id="orgDirectoryActionIds" value="">
+    </form>
 
     <?php if (defined('IS_AJAX')) { ob_clean(); } ?>
     <div id="orgDirectoryTableContainer" class="space-y-6">
@@ -320,7 +328,12 @@ function deleteDir(id) {
 		showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#aaa',
 		confirmButtonText: 'ยืนยันการลบ', cancelButtonText: 'ยกเลิก'
 	}).then(r => {
-		if (r.isConfirmed) window.location.href = 'action.php?action=delete&id=' + id;
+		if (r.isConfirmed) {
+            document.getElementById('orgDirectoryActionName').value = 'delete';
+            document.getElementById('orgDirectoryActionId').value = id;
+            document.getElementById('orgDirectoryActionIds').value = '';
+            document.getElementById('orgDirectoryActionForm').submit();
+        }
 	});
 }
 
@@ -458,7 +471,10 @@ function executeBulkAction() {
     }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'action.php?action=' + actionStr + '&ids=' + ids;
+            document.getElementById('orgDirectoryActionName').value = actionStr;
+            document.getElementById('orgDirectoryActionId').value = '';
+            document.getElementById('orgDirectoryActionIds').value = ids;
+            document.getElementById('orgDirectoryActionForm').submit();
         }
     });
 }
