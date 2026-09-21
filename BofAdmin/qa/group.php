@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดการหมวดหมู่ถาม-ตอบ';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $canAdd = $userPermissions['add'] ?? true;
 $canEdit = $userPermissions['edit'] ?? true;
@@ -60,6 +61,12 @@ try {
 </div>
 
 <div class="glass-panel p-6">
+    <form id="qaGroupActionForm" action="group_action.php" method="POST" class="hidden">
+        <?php echo bofSecurityCsrfField(); ?>
+        <input type="hidden" name="action" id="qaGroupActionName" value="">
+        <input type="hidden" name="id" id="qaGroupActionId" value="">
+        <input type="hidden" name="ids" id="qaGroupActionIds" value="">
+    </form>
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-100">
         <div>
 					<h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -197,7 +204,10 @@ function executeBulkAction() {
     Swal.fire({ title: confirmText, text: `จำนวน ${checkedBoxes.length} รายการ`, icon: action === 'bulk_delete' ? 'warning' : 'question', showCancelButton: true, confirmButtonColor: action === 'bulk_delete' ? '#d33' : '#3085d6', cancelButtonColor: '#aaa', confirmButtonText: 'ตกลง', cancelButtonText: 'ยกเลิก' }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'group_action.php?action=' + action + '&ids=' + ids;
+            document.getElementById('qaGroupActionName').value = action;
+            document.getElementById('qaGroupActionId').value = '';
+            document.getElementById('qaGroupActionIds').value = ids;
+            document.getElementById('qaGroupActionForm').submit();
         }
     });
 }
@@ -214,7 +224,10 @@ function deleteItem(id) {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = 'group_action.php?action=delete&id=' + id;
+            document.getElementById('qaGroupActionName').value = 'delete';
+            document.getElementById('qaGroupActionId').value = id;
+            document.getElementById('qaGroupActionIds').value = '';
+            document.getElementById('qaGroupActionForm').submit();
         }
     });
 }

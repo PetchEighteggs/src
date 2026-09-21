@@ -6,6 +6,7 @@ if (isset($_GET['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVE
 }
 $pageTitle = 'จัดการถาม-ตอบ';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $canAdd = $userPermissions['add'] ?? true;
 $canEdit = $userPermissions['edit'] ?? true;
@@ -178,6 +179,13 @@ try {
         </button>
     </div>
     <?php endif; ?>
+
+    <form id="qaActionForm" action="action.php" method="POST" class="hidden">
+        <?php echo bofSecurityCsrfField(); ?>
+        <input type="hidden" name="action" id="qaActionName" value="">
+        <input type="hidden" name="id" id="qaActionId" value="">
+        <input type="hidden" name="ids" id="qaActionIds" value="">
+    </form>
 
     <?php if (defined('IS_AJAX')) { ob_clean(); } ?>
     <div id="qaTableContainer" class="space-y-6">
@@ -485,7 +493,10 @@ function executeBulkAction() {
     }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'action.php?action=' + action + '&ids=' + ids;
+            document.getElementById('qaActionName').value = action;
+            document.getElementById('qaActionId').value = '';
+            document.getElementById('qaActionIds').value = ids;
+            document.getElementById('qaActionForm').submit();
         }
     });
 }
@@ -502,7 +513,10 @@ function deleteItem(id) {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = 'action.php?action=delete&id=' + id;
+            document.getElementById('qaActionName').value = 'delete';
+            document.getElementById('qaActionId').value = id;
+            document.getElementById('qaActionIds').value = '';
+            document.getElementById('qaActionForm').submit();
         }
     });
 }

@@ -8,6 +8,8 @@ require_once('../../config/func.class.php');
 require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 $StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
@@ -147,13 +149,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             die("Error: " . $e->getMessage()); 
         }
     }
-} elseif (isset($_GET['action'])) {
-    $action = $_GET['action'];
     $adminId = $StaffID;
     $ip = $_SERVER['REMOTE_ADDR'] ?? '';
 
     if ($action === 'delete') {
-        $id = $_GET['id'] ?? 0;
+        $id = $_POST['id'] ?? 0;
         if ($id > 0) {
             try {
                 // Delete physical file
@@ -179,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     } elseif ($action === 'bulk_delete' || $action === 'bulk_active' || $action === 'bulk_inactive') {
-        $ids = $_GET['ids'] ?? '';
+        $ids = $_POST['ids'] ?? '';
         if (!empty($ids)) {
             try {
                 $idArray = array_filter(explode(',', $ids), 'is_numeric');
