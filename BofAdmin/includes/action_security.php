@@ -260,7 +260,7 @@ function bofSecurityRequireCsrf(
     }
 
     bofSecurityLogFailure('csrf_validation_failed');
-    bofSecurityAbort(419, (string)($options['message'] ?? 'Invalid or expired security token'), $options);
+    bofSecurityAbort(403, (string)($options['message'] ?? 'Invalid or expired security token'), $options);
 }
 
 /**
