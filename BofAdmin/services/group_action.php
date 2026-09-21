@@ -7,9 +7,12 @@ require_once('../../config/ms.class.php');
 require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
+$StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
-$action = $_REQUEST['action'] ?? '';
+$action = $_POST['action'] ?? '';
 
 
 if ($action == 'save') {
@@ -29,26 +32,26 @@ if ($action == 'save') {
             $stmt->execute([$nameTH, $nameEN, $serviceType, $isActive, $orderNo]);
         }
         $logAction = (!empty($id) ? 'แก้ไขหมวดหมู่ข้อมูลบริการ ID: ' : 'เพิ่มหมวดหมู่ข้อมูลบริการ ID: ') . (!empty($id) ? $id : $DB->lastInsertId());
-        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 10, (!empty($id) ? $id : $DB->lastInsertId()));
+        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $StaffID, '', 10, (!empty($id) ? $id : $DB->lastInsertId()));
         echo "<script>window.location.href='group.php?type=".urlencode($serviceType)."';</script>";
     } catch (PDOException $e) {
         echo "<script>alert('Error: " . addslashes($e->getMessage()) . "'); window.history.back();</script>";
     }
 } elseif ($action == 'delete') {
-    $id = $_GET['id'] ?? 0;
-    $serviceType = $_GET['type'] ?? 'situation';
+    $id = $_POST['id'] ?? 0;
+    $serviceType = $_POST['type'] ?? 'situation';
     try {
         $stmt = $DB->prepare("DELETE FROM service_doc_groups WHERE GroupID = ?");
         $stmt->execute([$id]);
-        $MS->StaffLog('ลบหมวดหมู่ข้อมูลบริการ ID: ' . $id, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 10, $id);
+        $MS->StaffLog('ลบหมวดหมู่ข้อมูลบริการ ID: ' . $id, $_SERVER['REQUEST_URI'], $StaffID, '', 10, $id);
         echo "<script>alert('ลบข้อมูลเรียบร้อยแล้ว'); window.location.href='group.php?type=".urlencode($serviceType)."';</script>";
     } catch (PDOException $e) {
         echo "<script>alert('Error: " . addslashes($e->getMessage()) . "'); window.history.back();</script>";
     }
-} else if (($action === 'bulk_delete' || $action === 'bulk_active' || $action === 'bulk_inactive') && !empty($_GET['ids'])) {
-    $serviceType = $_GET['type'] ?? 'situation';
+} else if (($action === 'bulk_delete' || $action === 'bulk_active' || $action === 'bulk_inactive') && !empty($_POST['ids'])) {
+    $serviceType = $_POST['type'] ?? 'situation';
     try {
-        $ids = explode(',', $_GET['ids']);
+        $ids = explode(',', $_POST['ids']);
         $validIds = [];
         foreach ($ids as $val) {
             $val = (int)trim($val);
@@ -68,7 +71,7 @@ if ($action == 'save') {
             
             $thaiActions = ['bulk_active' => 'เปิดใช้งานหมวดหมู่ข้อมูลบริการ', 'bulk_inactive' => 'ระงับการใช้งานหมวดหมู่ข้อมูลบริการ', 'bulk_delete' => 'ลบหมวดหมู่ข้อมูลบริการ'];
             $logActionStr = $thaiActions[$action] ?? 'เปลี่ยนสถานะหมวดหมู่ข้อมูลบริการ';
-            $MS->StaffLog($logActionStr, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 10);
+            $MS->StaffLog($logActionStr, $_SERVER['REQUEST_URI'], $StaffID, '', 10);
         }
         header("Location: group.php?type=" . urlencode($serviceType));
         exit;

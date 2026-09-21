@@ -20,6 +20,7 @@ $serviceName = $serviceTypes[$serviceType] ?? 'จัดการข้อมู
 
 $pageTitle = $serviceName;
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $canAdd = $userPermissions['add'] ?? true;
 $canEdit = $userPermissions['edit'] ?? true;
@@ -166,6 +167,14 @@ try {
         </button>
     </div>
     <?php endif; ?>
+
+    <form id="serviceActionForm" action="action.php" method="POST" class="hidden">
+        <?php echo bofSecurityCsrfField(); ?>
+        <input type="hidden" name="action" id="serviceActionName" value="">
+        <input type="hidden" name="id" id="serviceActionId" value="">
+        <input type="hidden" name="ids" id="serviceActionIds" value="">
+        <input type="hidden" name="type" id="serviceActionType" value="<?php echo htmlspecialchars($serviceType); ?>">
+    </form>
 
     <?php if (defined('IS_AJAX')) { ob_clean(); } ?>
     <div id="groundwaterTableContainer" class="space-y-6">
@@ -477,7 +486,11 @@ function executeBulkAction() {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
             const currentUrl = new URL(window.location.href);
             const type = currentUrl.searchParams.get('type') || 'situation';
-            window.location.href = 'action.php?action=' + action + '&type=' + type + '&ids=' + ids;
+            document.getElementById('serviceActionName').value = action;
+            document.getElementById('serviceActionId').value = '';
+            document.getElementById('serviceActionIds').value = ids;
+            document.getElementById('serviceActionType').value = type;
+            document.getElementById('serviceActionForm').submit();
         }
     });
 }
@@ -494,7 +507,11 @@ function deleteService(id, type) {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = 'action.php?action=delete&type=' + type + '&id=' + id;
+            document.getElementById('serviceActionName').value = 'delete';
+            document.getElementById('serviceActionId').value = id;
+            document.getElementById('serviceActionIds').value = '';
+            document.getElementById('serviceActionType').value = type;
+            document.getElementById('serviceActionForm').submit();
         }
     });
 }

@@ -15,6 +15,7 @@ $serviceName = $serviceTypes[$serviceType] ?? 'จัดการข้อมู
 
 $pageTitle = 'จัดการหมวดหมู่: ' . $serviceName;
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $canAdd = $userPermissions['add'] ?? true;
 $canEdit = $userPermissions['edit'] ?? true;
@@ -73,6 +74,13 @@ try {
 </div>
 
 <div class="glass-panel p-6">
+    <form id="serviceGroupActionForm" action="group_action.php" method="POST" class="hidden">
+        <?php echo bofSecurityCsrfField(); ?>
+        <input type="hidden" name="action" id="serviceGroupActionName" value="">
+        <input type="hidden" name="id" id="serviceGroupActionId" value="">
+        <input type="hidden" name="ids" id="serviceGroupActionIds" value="">
+        <input type="hidden" name="type" id="serviceGroupActionType" value="<?php echo htmlspecialchars($serviceType); ?>">
+    </form>
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-100">
         <div>
             <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -163,7 +171,7 @@ try {
                             </a>
                             <?php endif; ?>
                             <?php if ($canDelete): ?>
-                            <button type="button" onclick="if(confirm('ยืนยันการลบ?')) window.location.href='group_action.php?action=delete&type=<?php echo urlencode($serviceType); ?>&id=<?php echo $item['GroupID']; ?>'" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors" title="ลบ">
+                            <button type="button" onclick="deleteGroup(<?php echo (int)$item['GroupID']; ?>)" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors" title="ลบ">
                                 <i class="ph ph-trash text-lg"></i>
                             </button>
                             <?php endif; ?>
@@ -214,7 +222,32 @@ function executeBulkAction() {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
             const currentUrl = new URL(window.location.href);
             const type = currentUrl.searchParams.get('type') || 'situation';
-            window.location.href = 'group_action.php?action=' + action + '&type=' + type + '&ids=' + ids;
+            document.getElementById('serviceGroupActionName').value = action;
+            document.getElementById('serviceGroupActionId').value = '';
+            document.getElementById('serviceGroupActionIds').value = ids;
+            document.getElementById('serviceGroupActionType').value = type;
+            document.getElementById('serviceGroupActionForm').submit();
+        }
+    });
+}
+
+function deleteGroup(id) {
+    Swal.fire({
+        title: 'ยืนยันการลบ?',
+        text: 'ข้อมูลหมวดหมู่นี้จะถูกลบ',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#aaa',
+        confirmButtonText: 'ยืนยันการลบ',
+        cancelButtonText: 'ยกเลิก'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('serviceGroupActionName').value = 'delete';
+            document.getElementById('serviceGroupActionId').value = id;
+            document.getElementById('serviceGroupActionIds').value = '';
+            document.getElementById('serviceGroupActionType').value = <?php echo json_encode($serviceType); ?>;
+            document.getElementById('serviceGroupActionForm').submit();
         }
     });
 }
