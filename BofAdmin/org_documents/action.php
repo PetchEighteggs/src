@@ -7,10 +7,12 @@ require_once('../../config/ms.class.php');
 require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 $StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
-$action = $_REQUEST['action'] ?? '';
+$action = $_POST['action'] ?? '';
 
 $uploadDir = $sServerDirFile . "org_documents/";
 if (!is_dir($uploadDir)) {
@@ -133,8 +135,8 @@ if ($action == 'save') {
     }
 
 } elseif ($action == 'delete') {
-    $id = $_GET['id'] ?? 0;
-    $serviceType = $_GET['type'] ?? 'policy';
+    $id = $_POST['id'] ?? 0;
+    $serviceType = $_POST['type'] ?? 'policy';
     if ($id > 0) {
         try {
             $DB->prepare("UPDATE org_doc_attachments SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE DocID = ?")->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $id]);
@@ -151,8 +153,8 @@ if ($action == 'save') {
         }
     }
 } elseif ($action == 'bulk_active' || $action == 'bulk_inactive' || $action == 'bulk_delete') {
-    $ids = $_GET['ids'] ?? '';
-    $serviceType = $_GET['type'] ?? 'policy';
+    $ids = $_POST['ids'] ?? '';
+    $serviceType = $_POST['type'] ?? 'policy';
     if (!empty($ids)) {
         $idArray = array_map('intval', explode(',', $ids));
         if (count($idArray) > 0) {

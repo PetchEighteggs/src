@@ -16,6 +16,7 @@ $serviceName = $serviceTypes[$serviceType] ?? 'จัดการเอกสา
 
 $pageTitle = $serviceName;
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $canAdd = $userPermissions['add'] ?? true;
 $canEdit = $userPermissions['edit'] ?? true;
@@ -163,6 +164,14 @@ try {
         </button>
     </div>
     <?php endif; ?>
+
+    <form id="orgDocumentActionForm" action="action.php" method="POST" class="hidden">
+        <?php echo bofSecurityCsrfField(); ?>
+        <input type="hidden" name="action" id="orgDocumentActionName" value="">
+        <input type="hidden" name="id" id="orgDocumentActionId" value="">
+        <input type="hidden" name="ids" id="orgDocumentActionIds" value="">
+        <input type="hidden" name="type" id="orgDocumentActionType" value="<?php echo htmlspecialchars($serviceType); ?>">
+    </form>
 
     <?php if (defined('IS_AJAX')) { ob_clean(); } ?>
     <div id="groundwaterTableContainer" class="space-y-6">
@@ -468,7 +477,11 @@ function executeBulkAction() {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
             const currentUrl = new URL(window.location.href);
             const type = currentUrl.searchParams.get('type') || 'policy';
-            window.location.href = 'action.php?action=' + action + '&type=' + type + '&ids=' + ids;
+            document.getElementById('orgDocumentActionName').value = action;
+            document.getElementById('orgDocumentActionId').value = '';
+            document.getElementById('orgDocumentActionIds').value = ids;
+            document.getElementById('orgDocumentActionType').value = type;
+            document.getElementById('orgDocumentActionForm').submit();
         }
     });
 }
@@ -485,7 +498,11 @@ function deleteService(id, type) {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = 'action.php?action=delete&type=' + type + '&id=' + id;
+            document.getElementById('orgDocumentActionName').value = 'delete';
+            document.getElementById('orgDocumentActionId').value = id;
+            document.getElementById('orgDocumentActionIds').value = '';
+            document.getElementById('orgDocumentActionType').value = type;
+            document.getElementById('orgDocumentActionForm').submit();
         }
     });
 }

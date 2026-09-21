@@ -13,6 +13,7 @@ $serviceType = $_GET['type'] ?? 'situation';
 $serviceName = $serviceTypes[$serviceType] ?? 'จัดการข้อมูลบริการ';
 $pageTitle = isset($_GET['id']) ? 'แก้ไขหมวดหมู่: ' . $serviceName : 'เพิ่มหมวดหมู่: ' . $serviceName;
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 
 
@@ -34,6 +35,7 @@ if ($id) {
 
 <div class="glass-panel p-6">
     <form action="group_action.php" method="POST" onsubmit="showLoading()">
+        <?php echo bofSecurityCsrfField(); ?>
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="id" value="<?php echo htmlspecialchars($id ?? ''); ?>">
         <input type="hidden" name="OrderNo" value="<?php echo htmlspecialchars($data['OrderNo'] ?? '1'); ?>">

@@ -13,6 +13,7 @@ $serviceType = $_GET['type'] ?? 'situation';
 $serviceName = $serviceTypes[$serviceType] ?? 'จัดการข้อมูลบริการ';
 $pageTitle = $serviceName;
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 $id = $_GET['id'] ?? 0;
 $action = $id > 0 ? 'edit' : 'add';
 $hasAccess = (!empty($id)) ? ($userPermissions['edit'] ?? true) : ($userPermissions['add'] ?? true);
@@ -64,6 +65,7 @@ if ($id > 0) {
 ?>
 
 <form action="action.php" method="POST" enctype="multipart/form-data" class="space-y-6" onsubmit="showLoading()">
+    <?php echo bofSecurityCsrfField(); ?>
     <input type="hidden" name="action" value="save">
     <input type="hidden" name="DocID" value="<?php echo $data['DocID']; ?>">
     <input type="hidden" name="ServiceType" value="<?php echo htmlspecialchars($serviceType); ?>">
