@@ -4,10 +4,14 @@ session_start();
 require_once('../../../configuration.php');
 require_once('../../../config/ms_com.php');
 require_once('../../../config/ms.class.php');
+require_once('../../includes/action_security.php');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 
-$action = $_REQUEST['action'] ?? '';
+$action = $_POST['action'] ?? '';
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 
 if (empty($deptID)) {
@@ -101,7 +105,7 @@ if ($action == 'save') {
             @unlink($uploadDir . $oldImageName);
         }
         $logAction = ($popupID > 0 ? 'แก้ไข Popup ID: ' : 'เพิ่ม Popup ID: ') . ($popupID > 0 ? $popupID : $DB->lastInsertId());
-        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 4, ($popupID > 0 ? $popupID : $DB->lastInsertId()));
+        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $staffID, '', 4, ($popupID > 0 ? $popupID : $DB->lastInsertId()));
         echo "<script>window.location.href='index.php';</script>";
     } catch (PDOException $e) {
         if ($newName !== null && is_file($uploadDir . $newName)) {
@@ -111,19 +115,19 @@ if ($action == 'save') {
     }
 
 } elseif ($action == 'delete') {
-    $id = $_GET['id'] ?? 0;
+    $id = (int)($_POST['id'] ?? 0);
     if ($id > 0) {
         try {
             $stmt = $DB->prepare("UPDATE microsite_popups SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE PopupID=? AND DeptID=? AND COALESCE(DelData, 'N') <> 'Y'");
             $stmt->execute([$staffID, $requestIP, $staffID, $requestIP, $id, $deptID]);
-            $MS->StaffLog('ลบ Popup ID: ' . $id, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 4, $id);
+            $MS->StaffLog('ลบ Popup ID: ' . $id, $_SERVER['REQUEST_URI'], $staffID, '', 4, $id);
             echo "<script>window.location.href='index.php';</script>";
         } catch (PDOException $e) {
             echo "<script>alert('Error: " . addslashes($e->getMessage()) . "'); window.location.href='index.php';</script>";
         }
     }
 } elseif ($action == 'bulk_active' || $action == 'bulk_inactive' || $action == 'bulk_delete') {
-    $ids = $_GET['ids'] ?? '';
+    $ids = $_POST['ids'] ?? '';
     if (!empty($ids)) {
         $idArray = array_values(array_unique(array_filter(array_map('intval', explode(',', $ids)))));
         if (count($idArray) > 0) {
@@ -144,7 +148,7 @@ if ($action == 'save') {
                 $sql = "UPDATE microsite_popups SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE PopupID IN ($placeholders) AND DeptID = ? AND COALESCE(DelData, 'N') <> 'Y'";
                 $stmt = $DB->prepare($sql);
                 $stmt->execute($params);
-                $MS->StaffLog('ลบ Popup Bulk ID: ' . $ids, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 4, 0);
+                $MS->StaffLog('ลบ Popup Bulk ID: ' . $ids, $_SERVER['REQUEST_URI'], $staffID, '', 4, 0);
             }
         }
     }

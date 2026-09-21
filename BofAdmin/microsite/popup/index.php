@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดการ Popup';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 if (empty($deptID)) {
@@ -106,6 +107,13 @@ $deptSlug = $stmtSlug->fetchColumn();
         </div>
     </div>
 </div>
+
+<form id="popupActionForm" action="action.php" method="POST" class="hidden">
+    <?php echo bofSecurityCsrfField(); ?>
+    <input type="hidden" name="action" id="popupActionName" value="">
+    <input type="hidden" name="id" id="popupActionId" value="">
+    <input type="hidden" name="ids" id="popupActionIds" value="">
+</form>
 
 <div class="glass-panel p-6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-4 mb-6 gap-4">
@@ -231,12 +239,12 @@ $deptSlug = $stmtSlug->fetchColumn();
                                     </a>
                                     <?php endif; ?>
                                     <?php if ($canDelete): ?>
-                                    <a href="action.php?action=delete&id=<?php echo $row['PopupID']; ?>" 
-                                       onclick="confirmDeleteUrl(this.href, 'คุณต้องการลบทิ้งข้อมูลนี้ใช่หรือไม่?'); return false;"
+                                    <button type="button"
+                                       onclick="deletePopup(<?php echo (int)$row['PopupID']; ?>)"
                                        class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center transition-colors tooltip"
                                        title="ลบ">
                                         <i class="ph ph-trash text-lg"></i>
-                                    </a>
+                                    </button>
                                     <?php endif; ?>
                                 </div>
                             </td>
@@ -344,12 +352,15 @@ function executeBulkAction() {
     }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'action.php?action=' + action + '&ids=' + ids;
+            document.getElementById('popupActionName').value = action;
+            document.getElementById('popupActionId').value = '';
+            document.getElementById('popupActionIds').value = ids;
+            document.getElementById('popupActionForm').submit();
         }
     });
 }
 
-function confirmDeleteUrl(url, text = 'คุณต้องการลบทิ้งข้อมูลนี้ใช่หรือไม่?') {
+function deletePopup(id, text = 'คุณต้องการลบทิ้งข้อมูลนี้ใช่หรือไม่?') {
     AdminDialog.fire({
         title: 'ยืนยันการลบ?',
         text: text,
@@ -361,7 +372,10 @@ function confirmDeleteUrl(url, text = 'คุณต้องการลบท�
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = url;
+            document.getElementById('popupActionName').value = 'delete';
+            document.getElementById('popupActionId').value = id;
+            document.getElementById('popupActionIds').value = '';
+            document.getElementById('popupActionForm').submit();
         }
     });
 }
