@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดการหมวดหมู่เว็บลิ้งค์';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $canAdd = $userPermissions['add'] ?? true;
 $canEdit = $userPermissions['edit'] ?? true;
@@ -60,6 +61,12 @@ try {
 </div>
 
 <div class="glass-panel p-6">
+    <form id="weblinkGroupActionForm" action="group_action.php" method="POST" class="hidden">
+        <?php echo bofSecurityCsrfField(); ?>
+        <input type="hidden" name="action" id="weblinkGroupActionName" value="">
+        <input type="hidden" name="id" id="weblinkGroupActionId" value="">
+        <input type="hidden" name="ids" id="weblinkGroupActionIds" value="">
+    </form>
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-100">
         <div>
 					<h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -198,7 +205,10 @@ function executeBulkAction() {
 		Swal.fire({ title: confirmText, text: `จำนวน ${checkedBoxes.length} รายการ`, icon: action === 'bulk_delete' ? 'warning' : 'question', showCancelButton: true, confirmButtonColor: action === 'bulk_delete' ? '#d33' : '#3085d6', cancelButtonColor: '#aaa', confirmButtonText: 'ตกลง', cancelButtonText: 'ยกเลิก' }).then((result) => {
 			if (result.isConfirmed) {
 					let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-					window.location.href = 'group_action.php?action=' + action + '&ids=' + ids;
+					document.getElementById('weblinkGroupActionName').value = action;
+					document.getElementById('weblinkGroupActionId').value = '';
+					document.getElementById('weblinkGroupActionIds').value = ids;
+					document.getElementById('weblinkGroupActionForm').submit();
 			}
     });
 }
@@ -215,7 +225,10 @@ function deleteGroup(id) {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = 'group_action.php?action=delete&id=' + id;
+            document.getElementById('weblinkGroupActionName').value = 'delete';
+            document.getElementById('weblinkGroupActionId').value = id;
+            document.getElementById('weblinkGroupActionIds').value = '';
+            document.getElementById('weblinkGroupActionForm').submit();
         }
     });
 }

@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดการเว็บลิ้งค์';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $id = $_GET['id'] ?? 0;
 $action = $id > 0 ? 'edit' : 'add';
@@ -71,6 +72,7 @@ try {
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
 <form action="action.php" method="POST" enctype="multipart/form-data" class="space-y-6" onsubmit="showLoading()">
+    <?php echo bofSecurityCsrfField(); ?>
     <input type="hidden" name="action" value="save">
     <input type="hidden" name="DocID" value="<?php echo $data['DocID']; ?>">
     <input type="hidden" name="OrderNo" value="<?php echo (int)($data['OrderNo'] ?? 0); ?>">
