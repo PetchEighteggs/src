@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดการเมนูเว็บไซต์';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 if (empty($deptID)) {
@@ -73,6 +74,7 @@ if ($id > 0) {
 ?>
 
 <form action="action.php" method="POST" enctype="multipart/form-data" class="space-y-6" onsubmit="showLoading()">
+    <?php echo bofSecurityCsrfField(); ?>
     <input type="hidden" name="action" value="save">
     <input type="hidden" name="MenuID" value="<?php echo $data['MenuID']; ?>">
     <input type="hidden" name="SubID" id="subIdInput" value="<?php echo $data['SubID']; ?>">

@@ -4,10 +4,14 @@ session_start();
 require_once('../../../configuration.php');
 require_once('../../../config/ms_com.php');
 require_once('../../../config/ms.class.php');
+require_once('../../includes/action_security.php');
 
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
-$action = $_REQUEST['action'] ?? '';
+$action = $_POST['action'] ?? '';
 $deptID = (int)($_SESSION['ActiveDeptID'] ?? 0);
 
 if ($deptID <= 0 || $action === '') {
@@ -105,7 +109,7 @@ if ($action === 'save') {
 }
 
 if ($action === 'delete') {
-    $id = (int)($_GET['id'] ?? 0);
+    $id = (int)($_POST['id'] ?? 0);
     if ($id > 0) {
       $stmt = $DB->prepare("UPDATE microsite_menus SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE MenuID=? AND DeptID=? AND COALESCE(DelData, 'N') <> 'Y'");
       $stmt->execute([$staffID, $requestIP, $staffID, $requestIP, $id, $deptID]);
@@ -116,7 +120,7 @@ if ($action === 'delete') {
 }
 
 if (in_array($action, ['bulk_active', 'bulk_inactive', 'bulk_delete'], true)) {
-    $ids = array_values(array_unique(array_filter(array_map('intval', explode(',', $_GET['ids'] ?? '')))));
+    $ids = array_values(array_unique(array_filter(array_map('intval', explode(',', $_POST['ids'] ?? '')))));
     if ($ids) {
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         if ($action === 'bulk_delete') {

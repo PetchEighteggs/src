@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดเรียงลำดับเมนูและเมนูย่อย';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 if (empty($deptID)) {
@@ -113,6 +114,7 @@ if (!$canView) {
     const submenuHelpText = document.getElementById('submenuHelpText');
     
     const canEdit = <?php echo $canEdit ? 'true' : 'false'; ?>;
+    const csrfToken = <?php echo json_encode(bofSecurityCsrfToken(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     let currentMenuId = null;
 
     // Load Menus on start
@@ -278,7 +280,7 @@ if (!$canView) {
         
         fetch('ajax_save_menu_order.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrfToken },
             body: JSON.stringify({ order: orderData })
         }).then(showToast).catch(showError);
     }
@@ -294,7 +296,7 @@ if (!$canView) {
         
         fetch('ajax_save_submenu_order.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrfToken },
             body: JSON.stringify({ order: orderData })
         }).then(showToast).catch(showError);
     }

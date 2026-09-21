@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดการเมนูเว็บไซต์';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 
@@ -118,6 +119,13 @@ try {
         </div>
     </div>
 </div>
+
+<form id="menusActionForm" action="action.php" method="POST" class="hidden">
+    <?php echo bofSecurityCsrfField(); ?>
+    <input type="hidden" name="action" id="menusActionName" value="">
+    <input type="hidden" name="id" id="menusActionId" value="">
+    <input type="hidden" name="ids" id="menusActionIds" value="">
+</form>
 
 <div class="glass-panel p-6">
     <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 border-b border-gray-100 pb-4">
@@ -404,7 +412,10 @@ function executeBulkAction() {
     }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'action.php?action=' + action + '&ids=' + ids;
+            document.getElementById('menusActionName').value = action;
+            document.getElementById('menusActionId').value = '';
+            document.getElementById('menusActionIds').value = ids;
+            document.getElementById('menusActionForm').submit();
         }
     });
 }
@@ -421,7 +432,10 @@ function deleteData(id) {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = 'action.php?action=delete&id=' + id;
+            document.getElementById('menusActionName').value = 'delete';
+            document.getElementById('menusActionId').value = id;
+            document.getElementById('menusActionIds').value = '';
+            document.getElementById('menusActionForm').submit();
         }
     });
 }
