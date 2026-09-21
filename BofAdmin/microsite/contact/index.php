@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'ติดต่อหน่วยงาน';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 if (empty($deptID)) {
@@ -93,6 +94,13 @@ try {
         <div class="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center text-amber-500"><i class="ph ph-minus-circle text-3xl"></i></div>
     </div>
 </div>
+
+<form id="contactActionForm" action="action.php" method="POST" class="hidden">
+    <?php echo bofSecurityCsrfField(); ?>
+    <input type="hidden" name="action" id="contactActionName" value="">
+    <input type="hidden" name="id" id="contactActionId" value="">
+    <input type="hidden" name="ids" id="contactActionIds" value="">
+</form>
 
 <div class="glass-panel p-6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-4 mb-6 gap-4">
@@ -320,7 +328,10 @@ function confirmDelete(id) {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = 'action.php?action=delete&id=' + id;
+            document.getElementById('contactActionName').value = 'delete';
+            document.getElementById('contactActionId').value = id;
+            document.getElementById('contactActionIds').value = '';
+            document.getElementById('contactActionForm').submit();
         }
     });
 }
@@ -334,7 +345,10 @@ function executeBulkAction() {
     AdminDialog.fire({ title: confirmText, text: `จำนวน ${checkedBoxes.length} รายการ`, icon: action === 'bulk_delete' ? 'warning' : 'question', showCancelButton: true, confirmButtonColor: action === 'bulk_delete' ? '#d33' : '#3085d6', cancelButtonColor: '#aaa', confirmButtonText: action === 'bulk_delete' ? 'ยืนยันการลบ' : 'ตกลง', cancelButtonText: 'ยกเลิก' }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'action.php?action=' + action + '&ids=' + ids;
+            document.getElementById('contactActionName').value = action;
+            document.getElementById('contactActionId').value = '';
+            document.getElementById('contactActionIds').value = ids;
+            document.getElementById('contactActionForm').submit();
         }
     });
 }

@@ -3,6 +3,7 @@ define('_VALID_ACCESS', 1);
 $isEdit = isset($_GET['id']) && !empty($_GET['id']);
 $pageTitle = $isEdit ? 'แก้ไขข้อมูลติดต่อ' : 'เพิ่มข้อมูลติดต่อ';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 if (empty($deptID)) {
@@ -20,7 +21,7 @@ if ($userGroupID === 'A') {
     $canEdit = checkMicrositeMenuPermission($DB, $staffID, $deptID, 'contact', 'CanEdit');
     $canAdd  = checkMicrositeMenuPermission($DB, $staffID, $deptID, 'contact', 'CanAdd');
 }
-if (!$canEdit && !$canAdd) {
+if (($isEdit && !$canEdit) || (!$isEdit && !$canAdd)) {
     echo "<script>alert('ไม่มีสิทธิ์'); window.location.href = 'index.php';</script>";
     exit;
 }
@@ -48,6 +49,7 @@ try {
 
 <div class="glass-panel p-6">
     <form action="action.php" method="POST" onsubmit="showLoading()">
+        <?php echo bofSecurityCsrfField(); ?>
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="id" value="<?php echo htmlspecialchars($id ?: ''); ?>">
 

@@ -3,10 +3,28 @@ define('_VALID_ACCESS', 1);
 $isEdit = isset($_GET['id']) && !empty($_GET['id']);
 $pageTitle = $isEdit ? 'แก้ไขกลุ่มติดต่อหน่วยงาน' : 'เพิ่มกลุ่มติดต่อหน่วยงาน';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 if (empty($deptID)) {
     echo "<script>window.location.href = '../index.php';</script>";
+    exit;
+}
+
+$userGroupID = $_SESSION['GroupID'] ?? '';
+$canAdd = false;
+$canEdit = false;
+if ($userGroupID === 'A') {
+    $canAdd = $canEdit = true;
+} elseif ($userGroupID === 'S') {
+    $permissionStaffID = (int)($_SESSION['StaffID'] ?? 0);
+    require_once('../../includes/microsite_permission.php');
+    $canAdd = checkMicrositeMenuPermission($DB, $permissionStaffID, $deptID, 'contact', 'CanAdd');
+    $canEdit = checkMicrositeMenuPermission($DB, $permissionStaffID, $deptID, 'contact', 'CanEdit');
+}
+if (($isEdit && !$canEdit) || (!$isEdit && !$canAdd)) {
+    http_response_code(403);
+    echo "<script>alert('คุณไม่มีสิทธิ์จัดการข้อมูลนี้'); window.location.href='group.php';</script>";
     exit;
 }
 
@@ -25,6 +43,7 @@ if ($id) {
 
 <div class="glass-panel p-6">
     <form action="group_action.php" method="POST" onsubmit="showLoading()">
+        <?php echo bofSecurityCsrfField(); ?>
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="id" value="<?php echo htmlspecialchars($id ?: ''); ?>">
         <input type="hidden" name="OrderNo" value="<?php echo intval($data['OrderNo'] ?? 1); ?>">
