@@ -1,11 +1,13 @@
 <?php
 define('_VALID_ACCESS', 1);
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) { echo json_encode(['status' => 'error']); exit; }
 include_once('../../../configuration.php');
 include_once('../../../config/ms_com.php');
-header('Content-Type: application/json');
+require_once('../../includes/action_security.php');
+header('Content-Type: application/json; charset=utf-8');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['response' => 'json', 'login_url' => '../../login.php']);
+bofSecurityRequireMethod(['GET'], ['response' => 'json']);
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 try {
     $sql = "SELECT TopGraphicID as id, Title_TH as title, Image as image, IsActive 

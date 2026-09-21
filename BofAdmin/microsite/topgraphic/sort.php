@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดเรียงลำดับ Top Graphic';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 if (empty($deptID)) {
@@ -68,6 +69,7 @@ $deptSlug = $stmtSlug->fetchColumn();
     const noDataMessage = document.getElementById('noDataMessage');
     const listContainer = document.getElementById('listContainer');
     const canEdit = <?php echo $canEdit ? 'true' : 'false'; ?>;
+    const csrfToken = <?php echo json_encode(bofSecurityCsrfToken(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     
     document.addEventListener('DOMContentLoaded', loadItems);
     
@@ -139,7 +141,7 @@ $deptSlug = $stmtSlug->fetchColumn();
         const items = Array.from(sortableList.children);
         const orderData = items.map((item, index) => ({ id: item.dataset.id, order: index + 1 }));
         
-        fetch('ajax_save_item_order.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order: orderData }) })
+        fetch('ajax_save_item_order.php', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ order: orderData }) })
         .then(res => res.json())
         .then(data => {
             if (data.status === 'success') {
