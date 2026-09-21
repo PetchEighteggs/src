@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดการอัลบั้มภาพ';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 if (empty($deptID)) {
@@ -119,6 +120,13 @@ $deptSlug = $stmtSlug->fetchColumn();
         </div>
     </div>
 </div>
+
+<form id="galleryActionForm" action="action.php" method="POST" class="hidden">
+    <?php echo bofSecurityCsrfField(); ?>
+    <input type="hidden" name="action" id="galleryActionName" value="">
+    <input type="hidden" name="id" id="galleryActionId" value="">
+    <input type="hidden" name="ids" id="galleryActionIds" value="">
+</form>
 
 <div class="glass-panel p-6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-4 mb-6 gap-4">
@@ -242,12 +250,12 @@ $deptSlug = $stmtSlug->fetchColumn();
                                     </a>
                                     <?php endif; ?>
                                     <?php if ($canDelete): ?>
-                                    <a href="action.php?action=delete&id=<?php echo $row['GalleryID']; ?>" 
-                                       onclick="confirmDeleteUrl(this.href, 'คุณต้องการลบทิ้งข้อมูลนี้ใช่หรือไม่? รูปภาพทั้งหมดในอัลบั้มจะถูกลบด้วย'); return false;"
+                                    <button type="button"
+                                       onclick="deleteGallery(<?php echo (int)$row['GalleryID']; ?>, 'คุณต้องการลบทิ้งข้อมูลนี้ใช่หรือไม่? รูปภาพทั้งหมดในอัลบั้มจะถูกลบด้วย')"
                                        class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center transition-colors tooltip"
                                        title="ลบ">
                                         <i class="ph ph-trash text-lg"></i>
-                                    </a>
+                                    </button>
                                     <?php endif; ?>
                                 </div>
                             </td>
@@ -356,12 +364,15 @@ function executeBulkAction() {
     }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'action.php?action=' + action + '&ids=' + ids;
+            document.getElementById('galleryActionName').value = action;
+            document.getElementById('galleryActionId').value = '';
+            document.getElementById('galleryActionIds').value = ids;
+            document.getElementById('galleryActionForm').submit();
         }
     });
 }
 
-function confirmDeleteUrl(url, text = 'คุณต้องการลบทิ้งข้อมูลนี้ใช่หรือไม่?') {
+function deleteGallery(id, text = 'คุณต้องการลบทิ้งข้อมูลนี้ใช่หรือไม่?') {
     AdminDialog.fire({
         title: 'ยืนยันการลบ?',
         text: text,
@@ -373,7 +384,10 @@ function confirmDeleteUrl(url, text = 'คุณต้องการลบท�
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = url;
+            document.getElementById('galleryActionName').value = 'delete';
+            document.getElementById('galleryActionId').value = id;
+            document.getElementById('galleryActionIds').value = '';
+            document.getElementById('galleryActionForm').submit();
         }
     });
 }

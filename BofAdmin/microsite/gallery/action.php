@@ -4,10 +4,14 @@ session_start();
 require_once('../../../configuration.php');
 require_once('../../../config/ms_com.php');
 require_once('../../../config/ms.class.php');
+require_once('../../includes/action_security.php');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 
-$action = $_REQUEST['action'] ?? '';
+$action = $_POST['action'] ?? '';
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 
 if (empty($deptID)) {
@@ -23,7 +27,7 @@ if ($userGroupID === 'A') {
 } else if ($userGroupID === 'S') {
     $staffID = $_SESSION['StaffID'] ?? 0;
     require_once('../../includes/microsite_permission.php');
-    if ($action === 'delete' || $action === 'bulk_delete') {
+    if ($action === 'delete' || $action === 'delete_image' || $action === 'bulk_delete') {
         $permRequired = 'CanDelete';
     } else if ($action === 'bulk_active' || $action === 'bulk_inactive') {
         $permRequired = 'CanEdit';
@@ -167,7 +171,7 @@ if ($action == 'save') {
         }
         
         $logAction = ($galleryID > 0 && $_POST['GalleryID'] > 0 ? 'แก้ไขภาพกิจกรรม ID: ' : 'เพิ่มภาพกิจกรรม ID: ') . $galleryID;
-        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 12, $galleryID);
+        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $staffID, '', 12, $galleryID);
         
         echo "<script>window.location.href='index.php';</script>";
     } catch (Throwable $e) {
@@ -183,20 +187,20 @@ if ($action == 'save') {
     }
 
 } elseif ($action == 'delete') {
-    $id = $_GET['id'] ?? 0;
+    $id = $_POST['id'] ?? 0;
     if ($id > 0) {
         try {
             $stmt = $DB->prepare("UPDATE microsite_gallery SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE GalleryID=? AND DeptID=? AND COALESCE(DelData, 'N') <> 'Y'");
             $stmt->execute([$staffID, $requestIP, $staffID, $requestIP, $id, $deptID]);
-            $MS->StaffLog('ลบภาพกิจกรรม ID: ' . $id, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 12, $id);
+            $MS->StaffLog('ลบภาพกิจกรรม ID: ' . $id, $_SERVER['REQUEST_URI'], $staffID, '', 12, $id);
             echo "<script>window.location.href='index.php';</script>";
         } catch (PDOException $e) {
             echo "<script>alert('Error: " . addslashes($e->getMessage()) . "'); window.location.href='index.php';</script>";
         }
     }
 } elseif ($action == 'delete_image') {
-    $imageId = $_GET['id'] ?? 0;
-    $galleryId = $_GET['gallery_id'] ?? 0;
+    $imageId = $_POST['id'] ?? 0;
+    $galleryId = $_POST['gallery_id'] ?? 0;
     
     if ($imageId > 0 && $galleryId > 0) {
         try {
@@ -213,7 +217,7 @@ if ($action == 'save') {
                 if (!empty($imgName) && is_file($uploadDir . $imgName)) {
                     @unlink($uploadDir . $imgName);
                 }
-                $MS->StaffLog("ลบรูปภาพย่อย ID: $imageId ของภาพกิจกรรม ID: $galleryId", $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 12, $galleryId);
+                $MS->StaffLog("ลบรูปภาพย่อย ID: $imageId ของภาพกิจกรรม ID: $galleryId", $_SERVER['REQUEST_URI'], $staffID, '', 12, $galleryId);
             }
             echo "<script>window.location.href='form.php?id=" . $galleryId . "';</script>";
         } catch (PDOException $e) {
@@ -221,7 +225,7 @@ if ($action == 'save') {
         }
     }
 } elseif ($action == 'bulk_active' || $action == 'bulk_inactive' || $action == 'bulk_delete') {
-    $ids = $_GET['ids'] ?? '';
+    $ids = $_POST['ids'] ?? '';
     if (!empty($ids)) {
         $idArray = array_values(array_unique(array_filter(array_map('intval', explode(',', $ids)))));
         if (count($idArray) > 0) {
@@ -254,7 +258,7 @@ if ($action == 'save') {
                     $stmtDel = $DB->prepare("UPDATE microsite_gallery SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE GalleryID IN ($validPlaceholders) AND DeptID=? AND COALESCE(DelData, 'N') <> 'Y'");
                     $stmtDel->execute(array_merge([$staffID, $requestIP, $staffID, $requestIP], $validIds, [$deptID]));
                     
-                    $MS->StaffLog('ลบภาพกิจกรรม Bulk ID: ' . implode(',', $validIds), $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 12, 0);
+                    $MS->StaffLog('ลบภาพกิจกรรม Bulk ID: ' . implode(',', $validIds), $_SERVER['REQUEST_URI'], $staffID, '', 12, 0);
                 }
             }
         }
