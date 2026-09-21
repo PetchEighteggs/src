@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดการสื่อมัลติมีเดีย';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 
@@ -107,6 +108,13 @@ try {
         </div>
     </div>
 </div>
+
+<form id="multimediaActionForm" action="action.php" method="POST" class="hidden">
+    <?php echo bofSecurityCsrfField(); ?>
+    <input type="hidden" name="action" id="multimediaActionName" value="">
+    <input type="hidden" name="id" id="multimediaActionId" value="">
+    <input type="hidden" name="ids" id="multimediaActionIds" value="">
+</form>
 
 <div class="glass-panel p-6">
     <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 border-b border-gray-100 pb-4">
@@ -284,7 +292,10 @@ function executeBulkAction() {
     AdminDialog.fire({ title: confirmText, text: `จำนวน ${checkedBoxes.length} รายการ`, icon: action === 'bulk_delete' ? 'warning' : 'question', showCancelButton: true, confirmButtonColor: action === 'bulk_delete' ? '#d33' : '#3085d6', cancelButtonColor: '#aaa', confirmButtonText: action === 'bulk_delete' ? 'ยืนยันการลบ' : 'ตกลง', cancelButtonText: 'ยกเลิก' }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'action.php?action=' + action + '&ids=' + ids;
+            document.getElementById('multimediaActionName').value = action;
+            document.getElementById('multimediaActionId').value = '';
+            document.getElementById('multimediaActionIds').value = ids;
+            document.getElementById('multimediaActionForm').submit();
         }
     });
 }
@@ -301,7 +312,10 @@ function deleteData(id) {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = 'action.php?action=delete&id=' + id;
+            document.getElementById('multimediaActionName').value = 'delete';
+            document.getElementById('multimediaActionId').value = id;
+            document.getElementById('multimediaActionIds').value = '';
+            document.getElementById('multimediaActionForm').submit();
         }
     });
 }

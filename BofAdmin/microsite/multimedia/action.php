@@ -4,10 +4,14 @@ session_start();
 require_once('../../../configuration.php');
 require_once('../../../config/ms_com.php');
 require_once('../../../config/ms.class.php');
+require_once('../../includes/action_security.php');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 
-$action = $_REQUEST['action'] ?? '';
+$action = $_POST['action'] ?? '';
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 
 if (empty($deptID)) {
@@ -118,7 +122,7 @@ if ($action === 'save') {
             @unlink($uploadDir . $currentImage);
         }
         $logAction = ($id > 0 ? 'แก้ไขสื่อมัลติมีเดีย ID: ' : 'เพิ่มสื่อมัลติมีเดีย ID: ') . ($id > 0 ? $id : $DB->lastInsertId());
-        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 11, ($id > 0 ? $id : $DB->lastInsertId()));
+        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $staffID, '', 11, ($id > 0 ? $id : $DB->lastInsertId()));
         echo "<script>window.location.href='index.php';</script>";
     } catch (PDOException $e) {
         if ($newFileName !== null && is_file($uploadDir . $newFileName)) {
@@ -128,17 +132,17 @@ if ($action === 'save') {
     }
 
 } else if ($action === 'delete') {
-    $id = $_GET['id'] ?? 0;
+    $id = $_POST['id'] ?? 0;
     
     $del = $DB->prepare("UPDATE microsite_multimedia SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE MediaID=? AND DeptID=? AND COALESCE(DelData, 'N') <> 'Y'");
     $del->execute([$staffID, $requestIP, $staffID, $requestIP, $id, $deptID]);
     
-    $MS->StaffLog('ลบสื่อมัลติมีเดีย ID: ' . $id, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 11, $id);
+    $MS->StaffLog('ลบสื่อมัลติมีเดีย ID: ' . $id, $_SERVER['REQUEST_URI'], $staffID, '', 11, $id);
     
     echo "<script>window.location.href='index.php';</script>";
-} else if (($action === 'bulk_delete' || $action === 'bulk_active' || $action === 'bulk_inactive') && !empty($_GET['ids'])) {
+} else if (($action === 'bulk_delete' || $action === 'bulk_active' || $action === 'bulk_inactive') && !empty($_POST['ids'])) {
     try {
-        $ids = explode(',', $_GET['ids']);
+        $ids = explode(',', $_POST['ids']);
         $validIds = [];
         foreach ($ids as $val) {
             $val = (int)trim($val);
@@ -163,7 +167,7 @@ if ($action === 'save') {
             
             $thaiActions = ['bulk_active' => 'เปิดใช้งานสื่อมัลติมีเดียแบบกลุ่ม', 'bulk_inactive' => 'ระงับการใช้งานสื่อมัลติมีเดียแบบกลุ่ม', 'bulk_delete' => 'ลบสื่อมัลติมีเดียแบบกลุ่ม'];
             $logActionStr = $thaiActions[$action] ?? 'เปลี่ยนสถานะสื่อมัลติมีเดียแบบกลุ่ม';
-            $MS->StaffLog($logActionStr, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 11);
+            $MS->StaffLog($logActionStr, $_SERVER['REQUEST_URI'], $staffID, '', 11);
         }
         header("Location: index.php");
         exit;

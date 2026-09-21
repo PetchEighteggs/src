@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'ฟอร์มจัดการสื่อมัลติมีเดีย';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 if (empty($deptID)) {
@@ -76,6 +77,7 @@ try {
 ?>
 
 <form action="action.php" method="POST" enctype="multipart/form-data" class="space-y-6" onsubmit="showLoading()">
+    <?php echo bofSecurityCsrfField(); ?>
     <input type="hidden" name="action" value="save">
     <input type="hidden" name="MediaID" value="<?php echo $data['MediaID']; ?>">
 

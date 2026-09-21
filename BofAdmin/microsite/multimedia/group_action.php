@@ -7,13 +7,35 @@ require_once('../../../config/ms.class.php');
 require_once('../../includes/action_security.php');
 $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 
-$action = $_REQUEST['action'] ?? '';
+$action = $_POST['action'] ?? '';
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 
 if (empty($deptID)) {
     echo "<script>alert('Session Expired!'); window.location.href='../index.php';</script>";
+    exit;
+}
+
+$userGroupID = $_SESSION['GroupID'] ?? '';
+$hasAccess = ($userGroupID === 'A');
+if (!$hasAccess && $userGroupID === 'S') {
+    $permissionStaffID = (int)($_SESSION['StaffID'] ?? 0);
+    require_once('../../includes/microsite_permission.php');
+    if ($action === 'delete' || $action === 'bulk_delete') {
+        $permRequired = 'CanDelete';
+    } elseif ($action === 'bulk_active' || $action === 'bulk_inactive') {
+        $permRequired = 'CanEdit';
+    } else {
+        $permRequired = !empty($_POST['id']) ? 'CanEdit' : 'CanAdd';
+    }
+    $hasAccess = checkMicrositeMenuPermission($DB, $permissionStaffID, $deptID, 'multimedia', $permRequired);
+}
+if (!$hasAccess) {
+    http_response_code(403);
+    echo "<script>alert('คุณไม่มีสิทธิ์จัดการข้อมูลนี้'); window.location.href='group.php';</script>";
     exit;
 }
 
@@ -37,24 +59,24 @@ if ($action == 'save') {
             $stmt->execute([$deptID, $nameTH, $nameEN, $isActive, $orderNo, $staffID, $requestIP]);
         }
         $logAction = (!empty($id) ? 'แก้ไขหมวดหมู่สื่อมัลติมีเดีย ID: ' : 'เพิ่มหมวดหมู่สื่อมัลติมีเดีย ID: ') . (!empty($id) ? $id : $DB->lastInsertId());
-        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 11, (!empty($id) ? $id : $DB->lastInsertId()));
+        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $staffID, '', 11, (!empty($id) ? $id : $DB->lastInsertId()));
         echo "<script>window.location.href='group.php';</script>";
     } catch (PDOException $e) {
         echo "<script>alert('Error: " . addslashes($e->getMessage()) . "'); window.history.back();</script>";
     }
 } elseif ($action == 'delete') {
-    $id = $_GET['id'] ?? 0;
+    $id = $_POST['id'] ?? 0;
     try {
         $stmt = $DB->prepare("UPDATE microsite_multimedia_groups SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE GroupID=? AND DeptID=? AND COALESCE(DelData, 'N') <> 'Y'");
         $stmt->execute([$staffID, $requestIP, $staffID, $requestIP, $id, $deptID]);
-        $MS->StaffLog('ลบหมวดหมู่สื่อมัลติมีเดีย ID: ' . $id, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 11, $id);
+        $MS->StaffLog('ลบหมวดหมู่สื่อมัลติมีเดีย ID: ' . $id, $_SERVER['REQUEST_URI'], $staffID, '', 11, $id);
         echo "<script>window.location.href='group.php';</script>";
     } catch (PDOException $e) {
         echo "<script>alert('Error: " . addslashes($e->getMessage()) . "'); window.history.back();</script>";
     }
-} else if (($action === 'bulk_delete' || $action === 'bulk_active' || $action === 'bulk_inactive') && !empty($_GET['ids'])) {
+} else if (($action === 'bulk_delete' || $action === 'bulk_active' || $action === 'bulk_inactive') && !empty($_POST['ids'])) {
     try {
-        $ids = explode(',', $_GET['ids']);
+        $ids = explode(',', $_POST['ids']);
         $validIds = [];
         foreach ($ids as $val) {
             $val = (int)trim($val);
@@ -78,7 +100,7 @@ if ($action == 'save') {
             
             $thaiActions = ['bulk_active' => 'เปิดใช้งานหมวดหมู่สื่อมัลติมีเดียแบบกลุ่ม', 'bulk_inactive' => 'ระงับการใช้งานหมวดหมู่สื่อมัลติมีเดียแบบกลุ่ม', 'bulk_delete' => 'ลบหมวดหมู่สื่อมัลติมีเดียแบบกลุ่ม'];
             $logActionStr = $thaiActions[$action] ?? 'เปลี่ยนสถานะหมวดหมู่สื่อมัลติมีเดียแบบกลุ่ม';
-            $MS->StaffLog($logActionStr, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 11);
+            $MS->StaffLog($logActionStr, $_SERVER['REQUEST_URI'], $staffID, '', 11);
         }
         echo "<script>window.location.href='group.php';</script>";
         exit;
