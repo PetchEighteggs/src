@@ -3,6 +3,7 @@ define('_VALID_ACCESS', 1);
 $isEdit = isset($_GET['id']) && !empty($_GET['id']);
 $pageTitle = 'แผนผังเว็บไซต์';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 if (empty($deptID)) {
@@ -40,6 +41,7 @@ if ($id) {
 
 <div class="glass-panel p-6">
     <form action="action.php" method="POST" onsubmit="showLoading()">
+        <?php echo bofSecurityCsrfField(); ?>
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="id" value="<?php echo htmlspecialchars($id ?: ''); ?>">
 

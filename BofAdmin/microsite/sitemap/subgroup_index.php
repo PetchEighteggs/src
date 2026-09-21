@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'แผนผังเว็บไซต์';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 if (empty($deptID)) {
@@ -109,6 +110,14 @@ try {
         <div class="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center text-amber-500"><i class="ph ph-minus-circle text-3xl"></i></div>
     </div>
 </div>
+
+<form id="sitemapSubgroupActionForm" action="subgroup_action.php" method="POST" class="hidden">
+    <?php echo bofSecurityCsrfField(); ?>
+    <input type="hidden" name="action" id="sitemapSubgroupActionName" value="">
+    <input type="hidden" name="group_id" value="<?php echo (int)$groupID; ?>">
+    <input type="hidden" name="id" id="sitemapSubgroupActionId" value="">
+    <input type="hidden" name="ids" id="sitemapSubgroupActionIds" value="">
+</form>
 
 <div class="glass-panel p-6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-4 mb-6 gap-4">
@@ -278,7 +287,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function confirmDelete(id) {
     Swal.fire({ title: 'ยืนยันการลบ?', text: 'คุณต้องการลบทิ้งข้อมูลนี้ใช่หรือไม่?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#aaa', confirmButtonText: 'ยืนยันการลบ', cancelButtonText: 'ยกเลิก' }).then((result) => {
-        if (result.isConfirmed) window.location.href = 'subgroup_action.php?action=delete&group_id=<?php echo $groupID; ?>&id=' + id;
+        if (result.isConfirmed) {
+            document.getElementById('sitemapSubgroupActionName').value = 'delete';
+            document.getElementById('sitemapSubgroupActionId').value = id;
+            document.getElementById('sitemapSubgroupActionIds').value = '';
+            document.getElementById('sitemapSubgroupActionForm').submit();
+        }
     });
 }
 
@@ -291,7 +305,10 @@ function executeBulkAction() {
     Swal.fire({ title: confirmText, text: `จำนวน ${checkedBoxes.length} รายการ`, icon: action === 'bulk_delete' ? 'warning' : 'question', showCancelButton: true, confirmButtonColor: action === 'bulk_delete' ? '#d33' : '#3085d6', cancelButtonColor: '#aaa', confirmButtonText: action === 'bulk_delete' ? 'ยืนยันการลบ' : 'ตกลง', cancelButtonText: 'ยกเลิก' }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'subgroup_action.php?action=' + action + '&group_id=<?php echo $groupID; ?>&ids=' + ids;
+            document.getElementById('sitemapSubgroupActionName').value = action;
+            document.getElementById('sitemapSubgroupActionId').value = '';
+            document.getElementById('sitemapSubgroupActionIds').value = ids;
+            document.getElementById('sitemapSubgroupActionForm').submit();
         }
     });
 }
