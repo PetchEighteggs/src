@@ -204,10 +204,17 @@
                     echo '<i class="ph ph-caret-down text-blue-400 transition-transform duration-300 '.$iconRotateClass.'" id="icon-'.$groupId.'"></i>';
                     // Only show exit department button if they can actually switch
                     if ($userGroupID === 'A' || $allowedDeptsCount > 1) {
-                        echo '<a href="'.$linkPrefix.'microsite/action.php?action=exit_dept" onclick="event.stopPropagation()" class="text-red-500 hover:text-red-700 font-bold shrink-0 text-base ml-1" title="ออกจากหน่วยงาน"><i class="ph ph-x-circle"></i></a>';
+                        echo '<a href="#" onclick="event.preventDefault(); event.stopPropagation(); document.getElementById(\'micrositeExitForm\').submit();" class="text-red-500 hover:text-red-700 font-bold shrink-0 text-base ml-1" title="ออกจากหน่วยงาน"><i class="ph ph-x-circle"></i></a>';
                     }
                     echo '</div>';
                     echo '</button>';
+
+                    if ($userGroupID === 'A' || $allowedDeptsCount > 1) {
+                        require_once(__DIR__ . '/action_security.php');
+                        echo '<form id="micrositeExitForm" action="'.$linkPrefix.'microsite/action.php" method="POST" class="hidden">';
+                        echo bofSecurityCsrfField();
+                        echo '<input type="hidden" name="action" value="exit_dept"></form>';
+                    }
 
                     echo '<div id="'.$groupId.'" class="'.$groupDisplayClass.' flex-col pb-2 space-y-1">';
                     

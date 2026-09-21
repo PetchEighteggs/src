@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'ภาพรวมหน่วยงาน';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 // Fetch Departments Data
 $departments = [];
@@ -20,8 +21,12 @@ try {
             $staffDept = $checkAccess->fetchColumn();
             
             if ($staffDept) {
-                // Instantly redirect to action.php to switch active department and go to view
-                echo "<script>window.location.href = 'action.php?action=switch_dept&id={$staffDept}';</script>";
+                // Submit the same department switch as the manual action below.
+                echo '<form id="autoSwitchDeptForm" action="action.php" method="POST">';
+                echo bofSecurityCsrfField();
+                echo '<input type="hidden" name="action" value="switch_dept">';
+                echo '<input type="hidden" name="id" value="' . (int)$staffDept . '">';
+                echo '</form><script>document.getElementById("autoSwitchDeptForm").submit();</script>';
                 exit;
             } else {
                 echo "<div class='glass-panel p-8 text-center text-red-500'>คุณยังไม่ได้รับการกำหนดสิทธิ์ให้ดูแลหน่วยงานใดเลย กรุณาติดต่อผู้ดูแลระบบ</div>";
@@ -115,6 +120,12 @@ $isRegionalActive = $searchGroup === 'regional' ? 'border-primary ring-2 ring-pr
     </a>
 </div>
 
+<form id="switchDeptForm" action="action.php" method="POST" class="hidden">
+    <?php echo bofSecurityCsrfField(); ?>
+    <input type="hidden" name="action" value="switch_dept">
+    <input type="hidden" name="id" id="switchDeptId" value="">
+</form>
+
 <div class="glass-panel p-6">
     <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
         <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -204,9 +215,9 @@ $isRegionalActive = $searchGroup === 'regional' ? 'border-primary ring-2 ring-pr
                             <?php endif; ?>
                         </td>
                         <td class="text-center">
-                            <a href="action.php?action=switch_dept&id=<?php echo $dept['DeptID']; ?>" class="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors mx-auto" title="จัดการข้อมูล">
+                            <button type="button" onclick="document.getElementById('switchDeptId').value = <?php echo (int)$dept['DeptID']; ?>; document.getElementById('switchDeptForm').submit();" class="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors mx-auto" title="จัดการข้อมูล">
                                 <i class="ph ph-pencil-simple text-lg"></i>
-                            </a>
+                            </button>
                         </td>
                     </tr>
                     <?php endforeach; ?>

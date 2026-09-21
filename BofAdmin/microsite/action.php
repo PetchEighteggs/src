@@ -8,12 +8,14 @@ require_once('../../config/ms.class.php');
 require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 
-$action = $_GET['action'] ?? '';
+$action = $_POST['action'] ?? '';
 
 if ($action === 'switch_dept') {
-    $deptID = $_GET['id'] ?? 0;
+    $deptID = (int)($_POST['id'] ?? 0);
     
     $userGroupID = $_SESSION['GroupID'] ?? '';
     
