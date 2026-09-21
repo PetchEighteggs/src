@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดการหมวดหมู่ข่าวสาร';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 if (empty($deptID)) {
@@ -11,18 +12,20 @@ if (empty($deptID)) {
 
 // Permission Check
 $userGroupID = $_SESSION['GroupID'] ?? '';
-$canAdd = false; $canEdit = false; $canDelete = false;
+$canView = false; $canAdd = false; $canEdit = false; $canDelete = false;
 if ($userGroupID === 'A') {
-    $canAdd = $canEdit = $canDelete = true;
+    $canView = $canAdd = $canEdit = $canDelete = true;
 } else if ($userGroupID === 'S') {
     $staffID = $_SESSION['StaffID'] ?? 0;
     require_once('../../includes/microsite_permission.php');
+    $canView   = checkMicrositeMenuPermission($DB, $staffID, $deptID, 'news', 'CanView');
     $canEdit   = checkMicrositeMenuPermission($DB, $staffID, $deptID, 'news', 'CanEdit');
     $canAdd    = checkMicrositeMenuPermission($DB, $staffID, $deptID, 'news', 'CanAdd');
     $canDelete = checkMicrositeMenuPermission($DB, $staffID, $deptID, 'news', 'CanDelete');
 }
-if (!($canEdit || $canAdd)) {
-    echo "<script>alert('คุณไม่มีสิทธิ์จัดการหมวดหมู่ข่าว'); window.location.href = 'index.php';</script>";
+if (!$canView) {
+    http_response_code(403);
+    echo "<script>alert('คุณไม่มีสิทธิ์เข้าถึงส่วนนี้'); window.location.href = 'index.php';</script>";
     exit;
 }
 
@@ -168,7 +171,7 @@ try {
                             </a>
                             <?php endif; ?>
                             <?php if ($canDelete): ?>
-                            <button type="button" onclick="confirmDeleteUrl('group_action.php?action=delete&id=<?php echo $item['GroupID']; ?>')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors" title="ลบ">
+                            <button type="button" onclick="deleteGroup(<?php echo (int)$item['GroupID']; ?>)" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors" title="ลบ">
                                 <i class="ph ph-trash text-lg"></i>
                             </button>
                             <?php endif; ?>
@@ -180,6 +183,13 @@ try {
         </table>
     </div>
 </div>
+
+<form id="newsGroupActionForm" action="group_action.php" method="POST" class="hidden">
+    <?php echo bofSecurityCsrfField(); ?>
+    <input type="hidden" name="action" id="newsGroupActionName" value="">
+    <input type="hidden" name="id" id="newsGroupActionId" value="">
+    <input type="hidden" name="ids" id="newsGroupActionIds" value="">
+</form>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -217,12 +227,15 @@ function executeBulkAction() {
     Swal.fire({ title: confirmText, text: `จำนวน ${checkedBoxes.length} รายการ`, icon: action === 'bulk_delete' ? 'warning' : 'question', showCancelButton: true, confirmButtonColor: action === 'bulk_delete' ? '#d33' : '#3085d6', cancelButtonColor: '#aaa', confirmButtonText: action === 'bulk_delete' ? 'ยืนยันการลบ' : 'ตกลง', cancelButtonText: 'ยกเลิก' }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'group_action.php?action=' + action + '&ids=' + ids;
+            document.getElementById('newsGroupActionName').value = action;
+            document.getElementById('newsGroupActionId').value = '';
+            document.getElementById('newsGroupActionIds').value = ids;
+            document.getElementById('newsGroupActionForm').submit();
         }
     });
 }
 
-function confirmDeleteUrl(url, text = 'คุณต้องการลบทิ้งข้อมูลนี้ใช่หรือไม่?') {
+function deleteGroup(id, text = 'คุณต้องการลบทิ้งข้อมูลนี้ใช่หรือไม่?') {
     Swal.fire({
         title: 'ยืนยันการลบ?',
         text: text,
@@ -234,7 +247,10 @@ function confirmDeleteUrl(url, text = 'คุณต้องการลบท�
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = url;
+            document.getElementById('newsGroupActionName').value = 'delete';
+            document.getElementById('newsGroupActionId').value = id;
+            document.getElementById('newsGroupActionIds').value = '';
+            document.getElementById('newsGroupActionForm').submit();
         }
     });
 }

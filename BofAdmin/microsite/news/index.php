@@ -3,6 +3,7 @@ try {
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดการข่าวประชาสัมพันธ์';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 
@@ -127,6 +128,13 @@ try {
         </div>
     </div>
 </div>
+
+<form id="newsActionForm" action="action.php" method="POST" class="hidden">
+    <?php echo bofSecurityCsrfField(); ?>
+    <input type="hidden" name="action" id="newsActionName" value="">
+    <input type="hidden" name="id" id="newsActionId" value="">
+    <input type="hidden" name="ids" id="newsActionIds" value="">
+</form>
 
 <div class="glass-panel p-6">
     <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 border-b border-gray-100 pb-4">
@@ -363,7 +371,10 @@ function deleteNews(id) {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = 'action.php?action=delete&id=' + id;
+            document.getElementById('newsActionName').value = 'delete';
+            document.getElementById('newsActionId').value = id;
+            document.getElementById('newsActionIds').value = '';
+            document.getElementById('newsActionForm').submit();
         }
     });
 }
@@ -423,7 +434,10 @@ function executeBulkAction() {
     }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'action.php?action=' + actionStr + '&ids=' + ids;
+            document.getElementById('newsActionName').value = actionStr;
+            document.getElementById('newsActionId').value = '';
+            document.getElementById('newsActionIds').value = ids;
+            document.getElementById('newsActionForm').submit();
         }
     });
 }
@@ -432,9 +446,8 @@ function executeBulkAction() {
 <?php include_once('../../includes/footer.php'); ?>
 <?php 
 } catch (Throwable $t) {
-    echo "<h1>Fatal Error Caught:</h1>";
-    echo "<pre>" . $t->getMessage() . "\n" . $t->getTraceAsString() . "</pre>";
-    echo "Line: " . $t->getLine();
-    echo "File: " . $t->getFile();
+    error_log('Microsite news index failed: ' . $t->getMessage());
+    http_response_code(500);
+    echo 'เกิดข้อผิดพลาดในการแสดงผล';
 }
 ?>

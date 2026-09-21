@@ -5,11 +5,15 @@ session_start();
 require_once('../../../configuration.php');
 require_once('../../../config/ms_com.php');
 require_once('../../../config/ms.class.php');
+require_once('../../includes/action_security.php');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
-$action = $_REQUEST['action'] ?? '';
+$action = $_POST['action'] ?? '';
 if (empty($deptID)) {
     header("Location: ../index.php");
     exit;
@@ -44,7 +48,7 @@ $audit = $MS->micrositeAuditContext();
 $staffID = $audit['staff_id'];
 $requestIP = $audit['ip'];
 
-$id = $_REQUEST['id'] ?? 0;
+$id = (int)($_POST['id'] ?? 0);
 
 if ($action === 'save') {
     $groupID = $_POST['GroupID'] ?? 0;
@@ -174,7 +178,7 @@ if ($action === 'save') {
         }
 
         $logAction = (empty($id) ? 'เพิ่มข่าวประชาสัมพันธ์ ID: ' : 'แก้ไขข่าวประชาสัมพันธ์ ID: ') . $newsID;
-        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 8, $newsID);
+        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $staffID, '', 8, $newsID);
 
         $DB->commit();
         foreach (array_unique($oldPhysicalFiles) as $oldPhysicalFile) {
@@ -205,7 +209,7 @@ if ($action === 'save') {
             $del = $DB->prepare("UPDATE microsite_news SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE NewsID=? AND DeptID=? AND COALESCE(DelData, 'N') <> 'Y'");
             $del->execute([$staffID, $requestIP, $staffID, $requestIP, $id, $deptID]);
             
-            $MS->StaffLog('ลบข่าวประชาสัมพันธ์ ID: ' . $id, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 8, $id);
+            $MS->StaffLog('ลบข่าวประชาสัมพันธ์ ID: ' . $id, $_SERVER['REQUEST_URI'], $staffID, '', 8, $id);
             
         }
         header("Location: index.php");
@@ -213,9 +217,9 @@ if ($action === 'save') {
     } catch (PDOException $e) {
         echo "<script>alert('Error: " . addslashes($e->getMessage()) . "'); window.location.href = 'index.php';</script>";
     }
-} else if (($action === 'bulk_delete' || $action === 'bulk_active' || $action === 'bulk_inactive') && !empty($_GET['ids'])) {
+} else if (($action === 'bulk_delete' || $action === 'bulk_active' || $action === 'bulk_inactive') && !empty($_POST['ids'])) {
     try {
-        $ids = explode(',', $_GET['ids']);
+        $ids = explode(',', $_POST['ids']);
         $validIds = [];
         foreach ($ids as $val) {
             $val = (int)trim($val);
@@ -240,7 +244,7 @@ if ($action === 'save') {
             
             $thaiActions = ['bulk_active' => 'เปิดใช้งานข่าวประชาสัมพันธ์แบบกลุ่ม', 'bulk_inactive' => 'ระงับการใช้งานข่าวประชาสัมพันธ์แบบกลุ่ม', 'bulk_delete' => 'ลบข่าวประชาสัมพันธ์แบบกลุ่ม'];
             $logActionStr = $thaiActions[$action] ?? 'เปลี่ยนสถานะข่าวประชาสัมพันธ์แบบกลุ่ม';
-            $MS->StaffLog($logActionStr, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 8);
+            $MS->StaffLog($logActionStr, $_SERVER['REQUEST_URI'], $staffID, '', 8);
         }
         header("Location: index.php");
         exit;
@@ -252,8 +256,7 @@ if ($action === 'save') {
 header("Location: index.php");
 exit;
 } catch (Throwable $t) {
-    echo "<h1>Action Fatal Error:</h1>";
-    echo "<pre>" . $t->getMessage() . "\n" . $t->getTraceAsString() . "</pre>";
-    echo "Line: " . $t->getLine();
-    echo "File: " . $t->getFile();
+    error_log('Microsite news action failed: ' . $t->getMessage());
+    http_response_code(500);
+    echo "<script>alert('เกิดข้อผิดพลาดในการประมวลผล'); window.location.href='index.php';</script>";
 }
