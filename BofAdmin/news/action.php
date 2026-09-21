@@ -8,11 +8,12 @@ include_once('../../config/func.class.php');
 require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 $StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? '';
+$action = $_POST['action'] ?? '';
 
     function uploadMultipleFiles($filesArray, $uploadDir, $dbUploadDir, $newsId, $db, $table, $pathCol, $isAttachment = false) {
         global $_Config, $SetMaxSize, $SetFileSize, $StaffID;
@@ -90,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([
                 $_POST['Title_TH'], $_POST['Title_EN'], $slug, $_POST['Excerpt_TH'], $_POST['Excerpt_EN'], 
                 $_POST['Content_TH'], $_POST['Content_EN'], $categoryId, $_POST['DateStr'],
-                $coverPath, $isActive, $orderNo, 1, $_SERVER['REMOTE_ADDR'], $publisherName
+                $coverPath, $isActive, $orderNo, $StaffID, $_SERVER['REMOTE_ADDR'], $publisherName
             ]);
             $newId = $DB->lastInsertId();
             
@@ -174,7 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([
                 $_POST['Title_TH'], $_POST['Title_EN'], $slug, $_POST['Excerpt_TH'], $_POST['Excerpt_EN'], 
                 $_POST['Content_TH'], $_POST['Content_EN'], $categoryId, $_POST['DateStr'],
-                $coverPath, $isActive, $orderNo, 1, $_SERVER['REMOTE_ADDR'], $id
+                $coverPath, $isActive, $orderNo, $StaffID, $_SERVER['REMOTE_ADDR'], $id
             ]);
             
             if (isset($_FILES['Gallery'])) uploadMultipleFiles($_FILES['Gallery'], $sServerImgDir . 'news/gallery/', '', $id, $DB, 'news_gallery', 'ImagePath', false);
@@ -207,8 +208,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         } catch (PDOException $e) { die("Error: " . $e->getMessage()); }
     }
-} elseif (isset($_GET['action']) && $_GET['action'] === 'delete') {
-    $id = $_GET['id'];
+elseif ($action === 'delete') {
+    $id = $_POST['id'] ?? 0;
     try {
         $stmt = $DB->prepare("UPDATE news SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE NewsID=?");
         $stmt->execute([$StaffID, $_SERVER['REMOTE_ADDR'], $id]);
@@ -221,7 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch(PDOException $e) {}
         try { $DB->prepare("UPDATE news_gallery SET DelData='Y' WHERE NewsID=?")->execute([$id]); } catch(PDOException $e) {}
         
-        // Log function helper (inline since we are in GET)
+        // Log function helper
         $MS->StaffLog('ลบข่าวสาร', $_SERVER['REQUEST_URI'], $StaffID, 3, 7, $id);
         
         header("Location: index.php");
@@ -229,8 +230,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (PDOException $e) {
         die("Error: " . $e->getMessage());
     }
-} elseif (isset($_GET['action']) && $_GET['action'] === 'bulk_delete') {
-    $ids = $_GET['ids'] ?? '';
+} elseif ($action === 'bulk_delete') {
+    $ids = $_POST['ids'] ?? '';
     if (!empty($ids)) {
         try {
             $idArray = array_filter(explode(',', $ids), 'is_numeric');
@@ -258,13 +259,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             die("Error: " . $e->getMessage());
         }
     }
-} elseif (isset($_GET['action']) && in_array($_GET['action'], ['bulk_active', 'bulk_inactive'])) {
-    $ids = $_GET['ids'] ?? '';
+} elseif (in_array($action, ['bulk_active', 'bulk_inactive'])) {
+    $ids = $_POST['ids'] ?? '';
     if (!empty($ids)) {
         try {
             $idArray = array_filter(explode(',', $ids), 'is_numeric');
             if (!empty($idArray)) {
-                $status = ($_GET['action'] === 'bulk_active') ? 'Y' : 'N';
+                $status = ($action === 'bulk_active') ? 'Y' : 'N';
                 $placeholders = implode(',', array_fill(0, count($idArray), '?'));
                 $params = array_merge([$status], $idArray);
                 

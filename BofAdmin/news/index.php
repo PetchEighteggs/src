@@ -6,6 +6,7 @@ if (isset($_GET['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVE
 }
 $pageTitle = 'จัดการข่าวสาร';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $searchKeyword = $_GET['keyword'] ?? '';
 $searchCategory = $_GET['category'] ?? '';
@@ -156,6 +157,13 @@ try {
         <span class="text-sm text-gray-500 ml-2" id="bulkCountText"></span>
     </div>
     <?php endif; ?>
+
+    <form id="newsActionForm" action="action.php" method="POST" class="hidden">
+        <?php echo bofSecurityCsrfField(); ?>
+        <input type="hidden" name="action" id="newsActionName" value="">
+        <input type="hidden" name="id" id="newsActionId" value="">
+        <input type="hidden" name="ids" id="newsActionIds" value="">
+    </form>
 
     <?php if (defined('IS_AJAX')) { ob_clean(); } ?>
     <div id="newsTableContainer" class="space-y-6">
@@ -533,7 +541,10 @@ function executeBulkAction() {
     }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'action.php?action=' + actionStr + '&ids=' + ids;
+            document.getElementById('newsActionName').value = actionStr;
+            document.getElementById('newsActionId').value = '';
+            document.getElementById('newsActionIds').value = ids;
+            document.getElementById('newsActionForm').submit();
         }
     });
 }
@@ -550,7 +561,10 @@ function deleteNews(id) {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = 'action.php?action=delete&id=' + id;
+            document.getElementById('newsActionName').value = 'delete';
+            document.getElementById('newsActionId').value = id;
+            document.getElementById('newsActionIds').value = '';
+            document.getElementById('newsActionForm').submit();
         }
     });
 }
