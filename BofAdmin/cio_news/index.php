@@ -6,6 +6,7 @@ if (isset($_GET['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVE
 }
 $pageTitle = 'จัดการข่าวสาร CIO';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $searchKeyword = $_GET['keyword'] ?? '';
 $searchStatus = $_GET['status'] ?? '';
@@ -307,7 +308,21 @@ try {
     <?php if (defined('IS_AJAX')) { exit; } ?>
 </div>
 
+<form id="cioNewsMutationForm" action="action.php" method="POST" class="hidden">
+    <?php echo bofSecurityCsrfField(); ?>
+    <input type="hidden" name="action" value="">
+    <input type="hidden" name="id" value="">
+    <input type="hidden" name="ids" value="">
+</form>
+
 <script>
+function submitCioNewsMutation(action, id = '', ids = '') {
+    const form = document.getElementById('cioNewsMutationForm');
+    form.elements['action'].value = action;
+    form.elements['id'].value = id;
+    form.elements['ids'].value = ids;
+    form.submit();
+}
 let currentKeyword = '<?php echo $searchKeyword; ?>';
 let currentStatus = '<?php echo $searchStatus; ?>';
 
@@ -395,7 +410,7 @@ function executeBulkAction() {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = `action.php?action=bulk_${action}&ids=${ids.join(',')}`;
+            submitCioNewsMutation(`bulk_${action}`, '', ids.join(','));
         }
     });
 }
@@ -412,7 +427,7 @@ function deleteItem(id) {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = `action.php?action=delete&id=${id}`;
+            submitCioNewsMutation('delete', id);
         }
     });
 }
