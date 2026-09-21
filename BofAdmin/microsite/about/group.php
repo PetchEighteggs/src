@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดการหมวดหมู่เกี่ยวกับหน่วยงาน';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 if (empty($deptID)) {
@@ -105,6 +106,13 @@ try {
     </div>
 </div>
 
+<form id="aboutGroupActionForm" action="group_action.php" method="POST" class="hidden">
+    <?php echo bofSecurityCsrfField(); ?>
+    <input type="hidden" name="action" id="aboutGroupActionName" value="">
+    <input type="hidden" name="id" id="aboutGroupActionId" value="">
+    <input type="hidden" name="ids" id="aboutGroupActionIds" value="">
+</form>
+
 <div class="glass-panel p-6">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-100">
         <div>
@@ -198,7 +206,7 @@ try {
                             </a>
                             <?php endif; ?>
                             <?php if ($canDelete): ?>
-                            <button type="button" onclick="confirmDeleteUrl('group_action.php?action=delete&id=<?php echo $item['GroupID']; ?>')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors" title="ลบ">
+                            <button type="button" onclick="deleteGroup(<?php echo (int)$item['GroupID']; ?>)" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors" title="ลบ">
                                 <i class="ph ph-trash text-lg"></i>
                             </button>
                             <?php endif; ?>
@@ -321,7 +329,21 @@ function executeBulkAction() {
     }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'group_action.php?action=' + action + '&ids=' + ids;
+            document.getElementById('aboutGroupActionName').value = action;
+            document.getElementById('aboutGroupActionId').value = '';
+            document.getElementById('aboutGroupActionIds').value = ids;
+            document.getElementById('aboutGroupActionForm').submit();
+        }
+    });
+}
+
+function deleteGroup(id) {
+    AdminDialog.fire({ title: 'ยืนยันการลบ?', text: 'ข้อมูลหมวดหมู่นี้จะถูกลบ', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#aaa', confirmButtonText: 'ยืนยันการลบ', cancelButtonText: 'ยกเลิก' }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('aboutGroupActionName').value = 'delete';
+            document.getElementById('aboutGroupActionId').value = id;
+            document.getElementById('aboutGroupActionIds').value = '';
+            document.getElementById('aboutGroupActionForm').submit();
         }
     });
 }

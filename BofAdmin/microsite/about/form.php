@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = isset($_GET['id']) ? 'แก้ไขเกี่ยวกับหน่วยงาน' : 'เพิ่มเกี่ยวกับหน่วยงาน';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 if (empty($deptID)) {
@@ -68,6 +69,7 @@ $currentFileUrl = !empty($data['Image'])
 
 <div class="glass-panel p-6">
     <form action="action.php" method="POST" enctype="multipart/form-data" onsubmit="showLoading()">
+        <?php echo bofSecurityCsrfField(); ?>
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="id" value="<?php echo $id; ?>">
 

@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'เกี่ยวกับหน่วยงาน';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 
@@ -123,6 +124,13 @@ try {
         </div>
     </div>
 </div>
+
+<form id="aboutActionForm" action="action.php" method="POST" class="hidden">
+    <?php echo bofSecurityCsrfField(); ?>
+    <input type="hidden" name="action" id="aboutActionName" value="">
+    <input type="hidden" name="id" id="aboutActionId" value="">
+    <input type="hidden" name="ids" id="aboutActionIds" value="">
+</form>
 
 <div class="glass-panel p-6">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -248,7 +256,7 @@ try {
                                 <?php endif; ?>
                                 <?php if ($canDelete): ?>
                                 <button type="button" 
-                                        onclick="confirmDeleteUrl('action.php?action=delete&id=<?php echo $item['AboutID']; ?>')"
+                                        onclick="deleteAbout(<?php echo (int)$item['AboutID']; ?>)"
                                         class="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors"
                                         title="ลบ">
                                     <i class="ph ph-trash text-lg"></i>
@@ -427,7 +435,21 @@ function executeBulkAction() {
     }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'action.php?action=' + action + '&ids=' + ids;
+            document.getElementById('aboutActionName').value = action;
+            document.getElementById('aboutActionId').value = '';
+            document.getElementById('aboutActionIds').value = ids;
+            document.getElementById('aboutActionForm').submit();
+        }
+    });
+}
+
+function deleteAbout(id) {
+    AdminDialog.fire({ title: 'ยืนยันการลบ?', text: 'ข้อมูลนี้จะถูกลบ', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#aaa', confirmButtonText: 'ยืนยันการลบ', cancelButtonText: 'ยกเลิก' }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('aboutActionName').value = 'delete';
+            document.getElementById('aboutActionId').value = id;
+            document.getElementById('aboutActionIds').value = '';
+            document.getElementById('aboutActionForm').submit();
         }
     });
 }

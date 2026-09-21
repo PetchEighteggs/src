@@ -2,19 +2,18 @@
 define('_VALID_ACCESS', 1);
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) {
-    echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
-    exit;
-}
-
 include_once('../../../configuration.php');
 include_once('../../../config/ms_com.php');
 include_once('../../../config/ms.class.php');
 include_once('../../../config/func.class.php');
+require_once('../../includes/action_security.php');
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['response' => 'json', 'login_url' => '../../login.php']);
+bofSecurityRequireMethod(['POST'], ['response' => 'json']);
+bofSecurityRequireCsrf(null, '_csrf_token', ['response' => 'json']);
 if (!$DB) {
     echo json_encode(['status' => 'error', 'message' => 'DB Connection Failed']);
     exit;
@@ -66,7 +65,7 @@ try {
     $DB->commit();
     
     $MS = new MS($DB);
-    $MS->StaffLog('จัดเรียงลำดับหมวดหมู่เกี่ยวกับหน่วยงาน', $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1);
+    $MS->StaffLog('จัดเรียงลำดับหมวดหมู่เกี่ยวกับหน่วยงาน', $_SERVER['REQUEST_URI'], (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0));
     
     echo json_encode(['status' => 'success', 'message' => 'Order updated successfully']);
     

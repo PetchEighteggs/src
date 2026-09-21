@@ -7,9 +7,11 @@ require_once('../../../config/ms.class.php');
 require_once('../../includes/action_security.php');
 $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 
-$action = $_REQUEST['action'] ?? '';
+$action = $_POST['action'] ?? '';
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 
 if (empty($deptID)) {
@@ -36,23 +38,23 @@ if ($action == 'save') {
             $stmt->execute([$deptID, $nameTH, $nameEN, $isActive, $orderNo, $auditStaffID, $auditIP]);
         }
         $logAction = (!empty($id) ? 'แก้ไขหมวดหมู่เกี่ยวกับหน่วยงานประชาสัมพันธ์ ID: ' : 'เพิ่มหมวดหมู่เกี่ยวกับหน่วยงานประชาสัมพันธ์ ID: ') . (!empty($id) ? $id : $DB->lastInsertId());
-        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 8, (!empty($id) ? $id : $DB->lastInsertId()));
+        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $auditStaffID, '', 8, (!empty($id) ? $id : $DB->lastInsertId()));
         echo "<script>window.location.href='group.php';</script>";
     } catch (PDOException $e) {
         echo "<script>alert('Error: " . addslashes($e->getMessage()) . "'); window.history.back();</script>";
     }
 } elseif ($action == 'delete') {
-    $id = $_GET['id'] ?? 0;
+    $id = $_POST['id'] ?? 0;
     try {
         $stmt = $DB->prepare("UPDATE microsite_about_groups SET DelData = 'Y', DelDataDate = NOW(), DelDataBy = ?, DelDataIP = ?, UpdateDate = NOW(), UpdateBy = ?, UpdateIP = ? WHERE GroupID = ? AND DeptID = ? AND COALESCE(DelData, 'N') <> 'Y'");
         $stmt->execute([$auditStaffID, $auditIP, $auditStaffID, $auditIP, $id, $deptID]);
-        $MS->StaffLog('ลบหมวดหมู่เกี่ยวกับหน่วยงานประชาสัมพันธ์ ID: ' . $id, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 8, $id);
+        $MS->StaffLog('ลบหมวดหมู่เกี่ยวกับหน่วยงานประชาสัมพันธ์ ID: ' . $id, $_SERVER['REQUEST_URI'], $auditStaffID, '', 8, $id);
         echo "<script>window.location.href='group.php';</script>";
     } catch (PDOException $e) {
         echo "<script>alert('Error: " . addslashes($e->getMessage()) . "'); window.history.back();</script>";
     }
 } elseif ($action == 'bulk_active' || $action == 'bulk_inactive' || $action == 'bulk_delete') {
-    $ids = $_GET['ids'] ?? '';
+    $ids = $_POST['ids'] ?? '';
     if (!empty($ids)) {
         $idArray = array_map('intval', explode(',', $ids));
         if (count($idArray) > 0) {
@@ -73,7 +75,7 @@ if ($action == 'save') {
                 $sql = "UPDATE microsite_about_groups SET DelData = 'Y', DelDataDate = NOW(), DelDataBy = ?, DelDataIP = ?, UpdateDate = NOW(), UpdateBy = ?, UpdateIP = ? WHERE GroupID IN ($placeholders) AND DeptID = ? AND COALESCE(DelData, 'N') <> 'Y'";
                 $stmt = $DB->prepare($sql);
                 $stmt->execute($params);
-                $MS->StaffLog('ลบหมวดหมู่เกี่ยวกับหน่วยงานประชาสัมพันธ์ Bulk ID: ' . $ids, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 8, 0);
+                $MS->StaffLog('ลบหมวดหมู่เกี่ยวกับหน่วยงานประชาสัมพันธ์ Bulk ID: ' . $ids, $_SERVER['REQUEST_URI'], $auditStaffID, '', 8, 0);
             }
         }
     }
