@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดการกลุ่มย่อยดาวน์โหลด';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 $groupID = $_GET['group_id'] ?? 0;
@@ -70,6 +71,7 @@ $groupName = $stmtGroup->fetchColumn();
 
 <div class="glass-panel p-6">
     <form id="dataForm" action="subgroup_action.php" method="POST" onsubmit="showLoading()">
+        <?php echo bofSecurityCsrfField(); ?>
         <input type="hidden" name="action" value="<?php echo $mode; ?>">
         <input type="hidden" name="group_id" value="<?php echo $groupID; ?>">
         <input type="hidden" name="OrderNo" value="<?php echo htmlspecialchars($data['OrderNo'] ?? '1'); ?>">

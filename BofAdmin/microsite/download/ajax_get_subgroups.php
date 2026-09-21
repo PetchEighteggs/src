@@ -1,19 +1,25 @@
 <?php
 define('_VALID_ACCESS', 1);
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
-if (!isset($_SESSION['BofAdmin_LoggedIn']) || $_SESSION['BofAdmin_LoggedIn'] !== true) { echo json_encode(['status' => 'error']); exit; }
 include_once('../../../configuration.php');
 include_once('../../../config/ms_com.php');
-header('Content-Type: application/json');
+require_once('../../includes/action_security.php');
+header('Content-Type: application/json; charset=utf-8');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['response' => 'json', 'login_url' => '../../login.php']);
+bofSecurityRequireMethod(['GET'], ['response' => 'json']);
 $groupId = isset($_GET['group_id']) ? (int)$_GET['group_id'] : 0;
+$deptID = (int)($_SESSION['ActiveDeptID'] ?? 0);
 try {
-    $sql = "SELECT SubGroupID, SubGroupNameTH, IsActive, OrderNo 
-            FROM microsite_download_subgroups
-            WHERE GroupID = ? AND COALESCE(DelData, 'N') != 'Y'
-            ORDER BY OrderNo ASC";
+    $sql = "SELECT s.SubGroupID, s.SubGroupNameTH, s.IsActive, s.OrderNo
+            FROM microsite_download_subgroups s
+            INNER JOIN microsite_download_groups g ON g.GroupID = s.GroupID
+            WHERE s.GroupID = ? AND g.DeptID = ?
+              AND COALESCE(s.DelData, 'N') != 'Y'
+              AND COALESCE(g.DelData, 'N') != 'Y'
+            ORDER BY s.OrderNo ASC";
     $stmt = $DB->prepare($sql);
-    $stmt->execute([$groupId]);
+    $stmt->execute([$groupId, $deptID]);
     $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     echo json_encode(['status' => 'success', 'data' => $data]);

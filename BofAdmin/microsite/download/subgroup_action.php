@@ -12,6 +12,8 @@ require_once('../../../config/ms.class.php');
 require_once('../../includes/action_security.php');
 $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
@@ -23,8 +25,8 @@ if (empty($deptID)) {
     exit;
 }
 
-$action = $_REQUEST['action'] ?? '';
-$groupID = $_REQUEST['group_id'] ?? 0;
+$action = $_POST['action'] ?? '';
+$groupID = (int)($_POST['group_id'] ?? 0);
 
 if (empty($groupID)) {
     header('Location: group.php');
@@ -35,6 +37,24 @@ $groupCheck = $DB->prepare("SELECT COUNT(*) FROM microsite_download_groups WHERE
 $groupCheck->execute([$groupID, $deptID]);
 if ((int)$groupCheck->fetchColumn() === 0) {
     header('Location: group.php');
+    exit;
+}
+
+$hasAccess = ($userGroupID === 'A');
+if (!$hasAccess && $userGroupID === 'S') {
+    require_once('../../includes/microsite_permission.php');
+    if ($action === 'delete' || $action === 'bulk_delete') {
+        $permRequired = 'CanDelete';
+    } elseif ($action === 'edit' || $action === 'bulk_active' || $action === 'bulk_inactive') {
+        $permRequired = 'CanEdit';
+    } else {
+        $permRequired = 'CanAdd';
+    }
+    $hasAccess = checkMicrositeMenuPermission($DB, $staffID, $deptID, 'download', $permRequired);
+}
+if (!$hasAccess) {
+    http_response_code(403);
+    header("Location: subgroup.php?group_id=$groupID");
     exit;
 }
 
@@ -86,12 +106,12 @@ try {
         
     } elseif ($action === 'delete') {
         $stmt = $DB->prepare("UPDATE microsite_download_subgroups SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE SubGroupID=? AND GroupID=? AND COALESCE(DelData, 'N') <> 'Y'");
-        $stmt->execute([$staffID, $requestIP, $staffID, $requestIP, $_GET['id'], $groupID]);
+        $stmt->execute([$staffID, $requestIP, $staffID, $requestIP, (int)($_POST['id'] ?? 0), $groupID]);
         $DB->commit();
         redirectBack($groupID, 'ลบข้อมูลสำเร็จ');
         
     } elseif (in_array($action, ['bulk_active', 'bulk_inactive', 'bulk_delete'])) {
-        $ids = explode(',', $_GET['ids'] ?? '');
+        $ids = explode(',', $_POST['ids'] ?? '');
         $ids = array_filter(array_map('intval', $ids));
         
         if (!empty($ids)) {

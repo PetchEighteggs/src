@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดเรียงลำดับดาวน์โหลดเอกสาร';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 if (empty($deptID)) {
@@ -129,6 +130,7 @@ if (!$canView) {
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    const csrfToken = <?php echo json_encode(bofSecurityCsrfToken(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     const groupList = document.getElementById('groupSortableList');
     const subgroupList = document.getElementById('subgroupSortableList');
     const itemList = document.getElementById('itemSortableList');
@@ -359,21 +361,21 @@ if (!$canView) {
     function saveGroupOrder() {
         if (!canEdit) return;
         const orderData = Array.from(groupList.children).map((item, i) => ({ id: item.dataset.id, order: i + 1 }));
-        fetch('ajax_save_group_order.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order: orderData }) })
+        fetch('ajax_save_group_order.php', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ order: orderData }) })
         .then(showToast).catch(showError);
     }
     
     function saveSubgroupOrder() {
         if (!canEdit) return;
         const orderData = Array.from(subgroupList.children).map((item, i) => ({ id: item.dataset.id, order: i + 1 }));
-        fetch('ajax_save_subgroup_order.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order: orderData }) })
+        fetch('ajax_save_subgroup_order.php', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ order: orderData }) })
         .then(showToast).catch(showError);
     }
 
     function saveItemOrder() {
         if (!canEdit) return;
         const orderData = Array.from(itemList.children).map((item, i) => ({ id: item.dataset.id, order: i + 1 }));
-        fetch('ajax_save_item_order.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order: orderData }) })
+        fetch('ajax_save_item_order.php', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ order: orderData }) })
         .then(showToast).catch(showError);
     }
 

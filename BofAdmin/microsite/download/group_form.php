@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = isset($_GET['id']) ? 'แก้ไขหมวดหมู่ดาวน์โหลด' : 'เพิ่มหมวดหมู่ดาวน์โหลด';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 if (empty($deptID)) {
@@ -10,6 +11,20 @@ if (empty($deptID)) {
 }
 
 $id = $_GET['id'] ?? null;
+$userGroupID = $_SESSION['GroupID'] ?? '';
+$hasAccess = ($userGroupID === 'A');
+if (!$hasAccess && $userGroupID === 'S') {
+    $permissionStaffID = (int)($_SESSION['StaffID'] ?? 0);
+    require_once('../../includes/microsite_permission.php');
+    $permRequired = !empty($id) ? 'CanEdit' : 'CanAdd';
+    $hasAccess = checkMicrositeMenuPermission($DB, $permissionStaffID, $deptID, 'download', $permRequired);
+}
+if (!$hasAccess) {
+    http_response_code(403);
+    echo "<script>alert('คุณไม่มีสิทธิ์จัดการข้อมูลนี้'); window.location.href='group.php';</script>";
+    exit;
+}
+
 $data = ['GroupNameTH' => '', 'GroupNameEN' => '', 'IsActive' => 'Y', 'OrderNo' => 1];
 
 if ($id) {
@@ -26,6 +41,7 @@ if ($id) {
 
 <div class="glass-panel p-6">
     <form action="group_action.php" method="POST" onsubmit="showLoading()">
+        <?php echo bofSecurityCsrfField(); ?>
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="id" value="<?php echo htmlspecialchars($id ?? ''); ?>">
         <input type="hidden" name="OrderNo" value="<?php echo htmlspecialchars($data['OrderNo'] ?? '1'); ?>">

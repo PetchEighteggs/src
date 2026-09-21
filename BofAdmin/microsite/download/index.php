@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดการดาวน์โหลด';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 if (empty($deptID)) {
@@ -131,6 +132,13 @@ try {
         </div>
     </div>
 </div>
+
+<form id="downloadActionForm" action="action.php" method="POST" class="hidden">
+    <?php echo bofSecurityCsrfField(); ?>
+    <input type="hidden" name="action" id="downloadActionName" value="">
+    <input type="hidden" name="id" id="downloadActionId" value="">
+    <input type="hidden" name="ids" id="downloadActionIds" value="">
+</form>
 
 <div class="glass-panel p-6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-4 mb-6 gap-4">
@@ -263,11 +271,11 @@ try {
                                     </a>
                                     <?php endif; ?>
                                     <?php if ($canDelete): ?>
-                                    <a href="action.php?action=delete&id=<?php echo $row['DownloadID']; ?>" 
-                                       onclick="confirmDeleteUrl(this.href, 'คุณต้องการลบทิ้งข้อมูลนี้ใช่หรือไม่?'); return false;"
+                                    <button type="button"
+                                       onclick="deleteDownload(<?php echo (int)$row['DownloadID']; ?>)"
                                        class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center transition-colors tooltip"
                                        title="ลบ"><i class="ph ph-trash text-lg"></i>
-                                    </a>
+                                    </button>
                                     <?php endif; ?>
                                 </div>
                             </td>
@@ -473,12 +481,15 @@ function executeBulkAction() {
     }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'action.php?action=' + action + '&ids=' + ids;
+            document.getElementById('downloadActionName').value = action;
+            document.getElementById('downloadActionId').value = '';
+            document.getElementById('downloadActionIds').value = ids;
+            document.getElementById('downloadActionForm').submit();
         }
     });
 }
 
-function confirmDeleteUrl(url, text = 'คุณต้องการลบทิ้งข้อมูลนี้ใช่หรือไม่?') {
+function deleteDownload(id, text = 'คุณต้องการลบทิ้งข้อมูลนี้ใช่หรือไม่?') {
     AdminDialog.fire({
         title: 'ยืนยันการลบ?',
         text: text,
@@ -490,7 +501,10 @@ function confirmDeleteUrl(url, text = 'คุณต้องการลบท�
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = url;
+            document.getElementById('downloadActionName').value = 'delete';
+            document.getElementById('downloadActionId').value = id;
+            document.getElementById('downloadActionIds').value = '';
+            document.getElementById('downloadActionForm').submit();
         }
     });
 }
