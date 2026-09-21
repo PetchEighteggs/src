@@ -6,6 +6,7 @@ if (isset($_GET['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVE
 }
 $pageTitle = 'จัดการปฏิทินกิจกรรม CIO';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $searchKeyword = $_GET['keyword'] ?? '';
 
@@ -331,7 +332,21 @@ try {
     </div>
 </div>
 
+<form id="eventMutationForm" action="action.php" method="POST" class="hidden">
+    <?php echo bofSecurityCsrfField(); ?>
+    <input type="hidden" name="action" value="">
+    <input type="hidden" name="id" value="">
+    <input type="hidden" name="ids" value="">
+</form>
+
 <script>
+function submitEventMutation(action, id = '', ids = '') {
+    const form = document.getElementById('eventMutationForm');
+    form.elements['action'].value = action;
+    form.elements['id'].value = id;
+    form.elements['ids'].value = ids;
+    form.submit();
+}
 document.addEventListener('DOMContentLoaded', function() {
     const tableContainer = document.getElementById('newsTableContainer');
     if (!tableContainer) return;
@@ -508,7 +523,7 @@ function executeBulkAction() {
     }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'action.php?action=' + actionStr + '&ids=' + ids;
+            submitEventMutation(actionStr, '', ids);
         }
     });
 }
@@ -525,7 +540,7 @@ function deleteEvent(id) {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = 'action.php?action=delete&id=' + id;
+            submitEventMutation('delete', id);
         }
     });
 }
