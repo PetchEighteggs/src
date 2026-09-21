@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดการเมนูย่อย';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 if (empty($deptID)) {
@@ -134,6 +135,13 @@ try {
         </div>
     </div>
 </div>
+
+<form id="submenusActionForm" action="action.php" method="POST" class="hidden">
+    <?php echo bofSecurityCsrfField(); ?>
+    <input type="hidden" name="action" id="submenusActionName" value="">
+    <input type="hidden" name="id" id="submenusActionId" value="">
+    <input type="hidden" name="ids" id="submenusActionIds" value="">
+</form>
 
 <div class="glass-panel p-6">
     <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 border-b border-gray-100 pb-4">
@@ -395,7 +403,10 @@ function executeBulkAction() {
     }).then((result) => {
         if (result.isConfirmed) {
             const ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = `action.php?action=${action}&ids=${ids}`;
+            document.getElementById('submenusActionName').value = action;
+            document.getElementById('submenusActionId').value = '';
+            document.getElementById('submenusActionIds').value = ids;
+            document.getElementById('submenusActionForm').submit();
         }
     });
 }
@@ -412,7 +423,10 @@ function confirmDelete(id) {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = 'action.php?action=delete&id=' + id;
+            document.getElementById('submenusActionName').value = 'delete';
+            document.getElementById('submenusActionId').value = id;
+            document.getElementById('submenusActionIds').value = '';
+            document.getElementById('submenusActionForm').submit();
         }
     });
 }

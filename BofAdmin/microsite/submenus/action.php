@@ -4,10 +4,14 @@ session_start();
 require_once('../../../configuration.php');
 require_once('../../../config/ms_com.php');
 require_once('../../../config/ms.class.php');
+require_once('../../includes/action_security.php');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 
-$action = $_REQUEST['action'] ?? '';
+$action = $_POST['action'] ?? '';
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 
 if (empty($deptID) || empty($action)) {
@@ -68,22 +72,22 @@ if ($action == 'save') {
         $stmt->execute([$deptID, $menuID, $subMenuNameTH, $subMenuNameEN, $url, $target, $isActive, $orderNo, $staffID, $requestIP]);
     }
 
-    $MS->StaffLog(($id > 0 ? 'Update' : 'Add') . ' SubMenu ID: ' . ($id > 0 ? $id : $DB->lastInsertId()), $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1);
+    $MS->StaffLog(($id > 0 ? 'Update' : 'Add') . ' SubMenu ID: ' . ($id > 0 ? $id : $DB->lastInsertId()), $_SERVER['REQUEST_URI'], $staffID);
 
     echo "<script>window.location.href='index.php';</script>";
 }
 else if ($action == 'delete') {
-    $id = $_GET['id'] ?? 0;
+    $id = (int)($_POST['id'] ?? 0);
     if ($id > 0) {
         $stmt = $DB->prepare("UPDATE microsite_submenus SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE SubMenuID=? AND DeptID=? AND COALESCE(DelData, 'N') <> 'Y'");
         $stmt->execute([$staffID, $requestIP, $staffID, $requestIP, $id, $deptID]);
-        $MS->StaffLog('Delete SubMenu ID: ' . $id, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1);
+        $MS->StaffLog('Delete SubMenu ID: ' . $id, $_SERVER['REQUEST_URI'], $staffID);
     }
     header("Location: index.php");
     exit;
 }
 else if ($action == 'bulk_active' || $action == 'bulk_inactive' || $action == 'bulk_delete') {
-    $ids = $_GET['ids'] ?? '';
+    $ids = $_POST['ids'] ?? '';
     if (!empty($ids)) {
         $idArray = array_values(array_unique(array_filter(array_map('intval', explode(',', $ids)))));
         if (count($idArray) > 0) {
@@ -104,7 +108,7 @@ else if ($action == 'bulk_active' || $action == 'bulk_inactive' || $action == 'b
             $stmt->execute($params);
             
             $logActionStr = str_replace('bulk_', 'Bulk ', $action);
-            $MS->StaffLog("$logActionStr SubMenu IDs: $ids", $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1);
+            $MS->StaffLog("$logActionStr SubMenu IDs: $ids", $_SERVER['REQUEST_URI'], $staffID);
         }
     }
     header("Location: index.php");
