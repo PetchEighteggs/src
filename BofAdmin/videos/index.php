@@ -6,6 +6,7 @@ if (isset($_GET['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVE
 }
 $pageTitle = 'จัดการวีดิทัศน์';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $canAdd = $userPermissions['add'] ?? true;
 $canEdit = $userPermissions['edit'] ?? true;
@@ -176,6 +177,13 @@ try {
         </button>
     </div>
     <?php endif; ?>
+
+    <form id="videoActionForm" action="action.php" method="POST" class="hidden">
+        <?php echo bofSecurityCsrfField(); ?>
+        <input type="hidden" name="action" id="videoActionName" value="">
+        <input type="hidden" name="id" id="videoActionId" value="">
+        <input type="hidden" name="ids" id="videoActionIds" value="">
+    </form>
 
     <?php if (defined('IS_AJAX')) { ob_clean(); } ?>
     <div id="videosTableContainer" class="space-y-6">
@@ -482,7 +490,10 @@ function executeBulkAction() {
     }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'action.php?action=' + action + '&ids=' + ids;
+            document.getElementById('videoActionName').value = action;
+            document.getElementById('videoActionId').value = '';
+            document.getElementById('videoActionIds').value = ids;
+            document.getElementById('videoActionForm').submit();
         }
     });
 }
@@ -499,7 +510,10 @@ function deleteVideo(id) {
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = 'action.php?action=delete&id=' + id;
+            document.getElementById('videoActionName').value = 'delete';
+            document.getElementById('videoActionId').value = id;
+            document.getElementById('videoActionIds').value = '';
+            document.getElementById('videoActionForm').submit();
         }
     });
 }

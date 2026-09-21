@@ -8,6 +8,8 @@ include_once('../../config/func.class.php');
 require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 $StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
@@ -143,8 +145,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             die("Error: " . $e->getMessage());
         }
     }
-} elseif (isset($_GET['action']) && $_GET['action'] === 'delete') {
-    $id = $_GET['id'] ?? 0;
+    if ($action === 'delete') {
+    $id = $_POST['id'] ?? 0;
     if ($id > 0) {
         try {
             // Delete cover image file
@@ -166,8 +168,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             die("Error: " . $e->getMessage());
         }
     }
-} elseif (isset($_GET['action']) && $_GET['action'] === 'bulk_delete') {
-    $ids = $_GET['ids'] ?? '';
+} elseif ($action === 'bulk_delete') {
+    $ids = $_POST['ids'] ?? '';
     if (!empty($ids)) {
         try {
             $idArray = array_filter(explode(',', $ids), 'is_numeric');
@@ -197,13 +199,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             die("Error: " . $e->getMessage());
         }
     }
-} elseif (isset($_GET['action']) && in_array($_GET['action'], ['bulk_active', 'bulk_inactive'])) {
-    $ids = $_GET['ids'] ?? '';
+} elseif (in_array($action, ['bulk_active', 'bulk_inactive'])) {
+    $ids = $_POST['ids'] ?? '';
     if (!empty($ids)) {
         try {
             $idArray = array_filter(explode(',', $ids), 'is_numeric');
             if (!empty($idArray)) {
-                $status = ($_GET['action'] === 'bulk_active') ? 'Y' : 'N';
+                $status = ($action === 'bulk_active') ? 'Y' : 'N';
                 $placeholders = implode(',', array_fill(0, count($idArray), '?'));
                 $params = array_merge([$status], $idArray);
                 $stmt = $DB->prepare("UPDATE videos SET IsActive=? WHERE DocID IN ($placeholders)");
@@ -216,5 +218,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             die("Error: " . $e->getMessage());
         }
     }
+}
 }
 ?>
