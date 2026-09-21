@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดการหมวดหมู่แบนเนอร์';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 if (empty($deptID)) {
@@ -166,7 +167,7 @@ try {
                             </a>
                             <?php endif; ?>
                             <?php if ($canDelete): ?>
-                            <button type="button" onclick="confirmDeleteUrl('group_action.php?action=delete&id=<?php echo $item['GroupID']; ?>')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors" title="ลบ">
+                            <button type="button" onclick="deleteGroup(<?php echo (int)$item['GroupID']; ?>)" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors" title="ลบ">
                                 <i class="ph ph-trash text-lg"></i>
                             </button>
                             <?php endif; ?>
@@ -178,6 +179,13 @@ try {
         </table>
     </div>
 </div>
+
+<form id="bannerGroupActionForm" action="group_action.php" method="POST" class="hidden">
+    <?php echo bofSecurityCsrfField(); ?>
+    <input type="hidden" name="action" id="bannerGroupActionName" value="">
+    <input type="hidden" name="id" id="bannerGroupActionId" value="">
+    <input type="hidden" name="ids" id="bannerGroupActionIds" value="">
+</form>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -218,12 +226,15 @@ function executeBulkAction() {
     Swal.fire({ title: confirmText, text: `จำนวน ${checkedBoxes.length} รายการ`, icon: action === 'bulk_delete' ? 'warning' : 'question', showCancelButton: true, confirmButtonColor: action === 'bulk_delete' ? '#d33' : '#3085d6', cancelButtonColor: '#aaa', confirmButtonText: action === 'bulk_delete' ? 'ยืนยันการลบ' : 'ตกลง', cancelButtonText: 'ยกเลิก' }).then((result) => {
         if (result.isConfirmed) {
             let ids = Array.from(checkedBoxes).map(cb => cb.value).join(',');
-            window.location.href = 'group_action.php?action=' + action + '&ids=' + ids;
+            document.getElementById('bannerGroupActionName').value = action;
+            document.getElementById('bannerGroupActionId').value = '';
+            document.getElementById('bannerGroupActionIds').value = ids;
+            document.getElementById('bannerGroupActionForm').submit();
         }
     });
 }
 
-function confirmDeleteUrl(url, text = 'คุณต้องการลบทิ้งข้อมูลนี้ใช่หรือไม่?') {
+function deleteGroup(id, text = 'คุณต้องการลบทิ้งข้อมูลนี้ใช่หรือไม่?') {
     Swal.fire({
         title: 'ยืนยันการลบ?',
         text: text,
@@ -235,7 +246,10 @@ function confirmDeleteUrl(url, text = 'คุณต้องการลบท�
         cancelButtonText: 'ยกเลิก'
     }).then((result) => {
         if (result.isConfirmed) {
-            window.location.href = url;
+            document.getElementById('bannerGroupActionName').value = 'delete';
+            document.getElementById('bannerGroupActionId').value = id;
+            document.getElementById('bannerGroupActionIds').value = '';
+            document.getElementById('bannerGroupActionForm').submit();
         }
     });
 }

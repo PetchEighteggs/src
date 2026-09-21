@@ -7,13 +7,36 @@ require_once('../../../config/ms.class.php');
 require_once('../../includes/action_security.php');
 $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 
-$action = $_REQUEST['action'] ?? '';
+$action = $_POST['action'] ?? '';
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 
 if (empty($deptID)) {
     echo "<script>alert('Session Expired!'); window.location.href='../index.php';</script>";
+    exit;
+}
+
+// Verify the current user has permission for the requested group mutation.
+$userGroupID = $_SESSION['GroupID'] ?? '';
+$hasAccess = ($userGroupID === 'A');
+if (!$hasAccess && $userGroupID === 'S') {
+    $permissionStaffID = (int)($_SESSION['StaffID'] ?? 0);
+    require_once('../../includes/microsite_permission.php');
+    if ($action === 'delete' || $action === 'bulk_delete') {
+        $permRequired = 'CanDelete';
+    } elseif ($action === 'bulk_active' || $action === 'bulk_inactive') {
+        $permRequired = 'CanEdit';
+    } else {
+        $permRequired = !empty($_POST['id']) ? 'CanEdit' : 'CanAdd';
+    }
+    $hasAccess = checkMicrositeMenuPermission($DB, $permissionStaffID, $deptID, 'banner', $permRequired);
+}
+if (!$hasAccess) {
+    http_response_code(403);
+    echo "<script>alert('คุณไม่มีสิทธิ์จัดการข้อมูลนี้'); window.location.href='group.php';</script>";
     exit;
 }
 
@@ -37,23 +60,23 @@ if ($action == 'save') {
             $stmt->execute([$deptID, $nameTH, $nameEN, $isActive, $orderNo, $staffID, $requestIP]);
         }
         $logAction = (!empty($id) ? 'แก้ไขหมวดหมู่ช่องทางประชาสัมพันธ์ (Banner) ID: ' : 'เพิ่มหมวดหมู่ช่องทางประชาสัมพันธ์ (Banner) ID: ') . (!empty($id) ? $id : $DB->lastInsertId());
-        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 9, (!empty($id) ? $id : $DB->lastInsertId()));
+        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $staffID, '', 9, (!empty($id) ? $id : $DB->lastInsertId()));
         echo "<script>window.location.href='index.php';</script>";
     } catch (PDOException $e) {
         echo "<script>alert('Error: " . addslashes($e->getMessage()) . "'); window.history.back();</script>";
     }
 } elseif ($action == 'delete') {
-    $id = $_GET['id'] ?? 0;
+    $id = $_POST['id'] ?? 0;
     try {
         $stmt = $DB->prepare("UPDATE microsite_banner_groups SET DelData = 'Y', DelDataDate = NOW(), DelDataBy = ?, DelDataIP = ?, UpdateDate = NOW(), UpdateBy = ?, UpdateIP = ? WHERE GroupID = ? AND DeptID = ? AND COALESCE(DelData, 'N') <> 'Y'");
         $stmt->execute([$staffID, $requestIP, $staffID, $requestIP, $id, $deptID]);
-        $MS->StaffLog('ลบหมวดหมู่ช่องทางประชาสัมพันธ์ (Banner) ID: ' . $id, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 9, $id);
+        $MS->StaffLog('ลบหมวดหมู่ช่องทางประชาสัมพันธ์ (Banner) ID: ' . $id, $_SERVER['REQUEST_URI'], $staffID, '', 9, $id);
         echo "<script>window.location.href='index.php';</script>";
     } catch (PDOException $e) {
         echo "<script>alert('Error: " . addslashes($e->getMessage()) . "'); window.history.back();</script>";
     }
 } elseif ($action == 'bulk_active' || $action == 'bulk_inactive' || $action == 'bulk_delete') {
-    $ids = $_GET['ids'] ?? '';
+    $ids = $_POST['ids'] ?? '';
     if (!empty($ids)) {
         $idArray = array_values(array_unique(array_filter(array_map('intval', explode(',', $ids)))));
         if (count($idArray) > 0) {
@@ -74,7 +97,7 @@ if ($action == 'save') {
                 $sql = "UPDATE microsite_banner_groups SET DelData = 'Y', DelDataDate = NOW(), DelDataBy = ?, DelDataIP = ?, UpdateDate = NOW(), UpdateBy = ?, UpdateIP = ? WHERE GroupID IN ($placeholders) AND DeptID = ? AND COALESCE(DelData, 'N') <> 'Y'";
                 $stmt = $DB->prepare($sql);
                 $stmt->execute($params);
-                $MS->StaffLog('ลบหมวดหมู่ช่องทางประชาสัมพันธ์ Bulk ID: ' . $ids, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 9, 0);
+                $MS->StaffLog('ลบหมวดหมู่ช่องทางประชาสัมพันธ์ Bulk ID: ' . $ids, $_SERVER['REQUEST_URI'], $staffID, '', 9, 0);
             }
         }
     }

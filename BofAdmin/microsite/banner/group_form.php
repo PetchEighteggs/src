@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = isset($_GET['id']) ? 'แก้ไขหมวดหมู่แบนเนอร์' : 'เพิ่มหมวดหมู่แบนเนอร์';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 if (empty($deptID)) {
@@ -26,6 +27,7 @@ if ($id) {
 
 <div class="glass-panel p-6">
     <form action="group_action.php" method="POST" onsubmit="showLoading()">
+        <?php echo bofSecurityCsrfField(); ?>
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="id" value="<?php echo htmlspecialchars($id ?? ''); ?>">
         <input type="hidden" name="OrderNo" value="<?php echo htmlspecialchars($data['OrderNo'] ?? '1'); ?>">
