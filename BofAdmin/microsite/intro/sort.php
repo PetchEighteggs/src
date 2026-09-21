@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดเรียงลำดับ Intro';
 include_once('../../includes/header.php');
+require_once('../../includes/action_security.php');
 
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 if (empty($deptID)) {
@@ -63,6 +64,7 @@ $deptSlug = $stmtSlug->fetchColumn();
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    const csrfToken = <?php echo json_encode(bofSecurityCsrfToken(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     const sortableList = document.getElementById('sortableList');
     const loadingIndicator = document.getElementById('loadingIndicator');
     const noDataMessage = document.getElementById('noDataMessage');
@@ -139,7 +141,7 @@ $deptSlug = $stmtSlug->fetchColumn();
         const items = Array.from(sortableList.children);
         const orderData = items.map((item, index) => ({ id: item.dataset.id, order: index + 1 }));
         
-        fetch('ajax_save_item_order.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order: orderData }) })
+        fetch('ajax_save_item_order.php', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrfToken }, body: JSON.stringify({ order: orderData }) })
         .then(res => res.json())
         .then(data => {
             if (data.status === 'success') {
