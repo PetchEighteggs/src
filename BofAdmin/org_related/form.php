@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'จัดการหน่วยงานที่เกี่ยวข้อง';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 ?>
 <!-- Flatpickr CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -39,6 +40,7 @@ if ($id) {
 ?>
 
 <form action="action.php" method="POST" enctype="multipart/form-data" class="space-y-6" onsubmit="showLoading()">
+    <?php echo bofSecurityCsrfField(); ?>
     <input type="hidden" name="action" value="<?php echo $id ? 'edit' : 'add'; ?>">
     <?php if ($id): ?>
     <input type="hidden" name="id" value="<?php echo (int)$id; ?>">

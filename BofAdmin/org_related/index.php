@@ -6,6 +6,7 @@ if (isset($_GET['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVE
 }
 $pageTitle = 'จัดการหน่วยงานที่เกี่ยวข้อง';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $canAdd    = $userPermissions['add']    ?? true;
 $canEdit   = $userPermissions['edit']   ?? true;
@@ -117,6 +118,13 @@ try {
                 ล้างค่า
             </a>
         </div>
+    </form>
+
+    <form id="orgRelatedActionForm" action="action.php" method="POST" class="hidden">
+        <?php echo bofSecurityCsrfField(); ?>
+        <input type="hidden" name="action" id="orgRelatedActionName" value="">
+        <input type="hidden" name="id" id="orgRelatedActionId" value="">
+        <input type="hidden" name="ids" id="orgRelatedActionIds" value="">
     </form>
     
     <?php if (defined('IS_AJAX')) { ob_clean(); } ?>
@@ -359,7 +367,10 @@ function executeBulkAction() {
     }).then(r => {
         if (r.isConfirmed) {
             let ids = Array.from(boxes).map(cb => cb.value).join(',');
-            window.location.href = 'action.php?action=' + actionMap[action] + '&ids=' + ids;
+            document.getElementById('orgRelatedActionName').value = actionMap[action];
+            document.getElementById('orgRelatedActionId').value = '';
+            document.getElementById('orgRelatedActionIds').value = ids;
+            document.getElementById('orgRelatedActionForm').submit();
         }
     });
 }
@@ -369,7 +380,12 @@ function deleteItem(id) {
         showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#aaa',
         confirmButtonText: 'ยืนยันการลบ', cancelButtonText: 'ยกเลิก'
     }).then(r => {
-        if (r.isConfirmed) window.location.href = 'action.php?action=delete&id=' + id;
+        if (r.isConfirmed) {
+            document.getElementById('orgRelatedActionName').value = 'delete';
+            document.getElementById('orgRelatedActionId').value = id;
+            document.getElementById('orgRelatedActionIds').value = '';
+            document.getElementById('orgRelatedActionForm').submit();
+        }
     });
 }
 

@@ -8,6 +8,8 @@ include_once('../../config/func.class.php');
 require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 $StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
@@ -111,12 +113,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (PDOException $e) { die("Error: " . $e->getMessage()); }
     }
 
-} elseif (isset($_GET['action'])) {
-    $getAction = $_GET['action'];
-
     // --- DELETE ---
-    if ($getAction === 'delete') {
-        $id = (int)($_GET['id'] ?? 0);
+    if ($action === 'delete') {
+        $id = (int)($_POST['id'] ?? 0);
         if ($id) {
             try {
                 $DB->prepare("UPDATE org_related SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=? WHERE RelatedID=?")
@@ -128,8 +127,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // --- BULK DELETE ---
-    elseif ($getAction === 'bulk_delete') {
-        $ids = $_GET['ids'] ?? '';
+    elseif ($action === 'bulk_delete') {
+        $ids = $_POST['ids'] ?? '';
         if (!empty($ids)) {
             $idArray = array_filter(explode(',', $ids), 'is_numeric');
             if (!empty($idArray)) {
@@ -145,13 +144,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // --- BULK ACTIVE / INACTIVE ---
-    elseif (in_array($getAction, ['bulk_active', 'bulk_inactive'])) {
-        $ids = $_GET['ids'] ?? '';
+    elseif (in_array($action, ['bulk_active', 'bulk_inactive'])) {
+        $ids = $_POST['ids'] ?? '';
         if (!empty($ids)) {
             $idArray = array_filter(explode(',', $ids), 'is_numeric');
             if (!empty($idArray)) {
                 try {
-                    $status = ($getAction === 'bulk_active') ? 'Y' : 'N';
+                    $status = ($action === 'bulk_active') ? 'Y' : 'N';
                     $placeholders = implode(',', array_fill(0, count($idArray), '?'));
                     $DB->prepare("UPDATE org_related SET IsActive=? WHERE RelatedID IN ($placeholders)")
                        ->execute(array_merge([$status], array_values($idArray)));
