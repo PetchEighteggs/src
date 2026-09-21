@@ -2,6 +2,7 @@
 define('_VALID_ACCESS', 1);
 $pageTitle = 'ตั้งค่าหน่วยงาน';
 include_once('../includes/header.php');
+require_once('../includes/action_security.php');
 
 $action = $_GET['action'] ?? 'edit';
 $deptID = ($action === 'add') ? 0 : ($_SESSION['ActiveDeptID'] ?? 0);
@@ -78,6 +79,7 @@ if ($deptID > 0) {
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
 <form id="deptForm" action="save_dept.php" method="POST" enctype="multipart/form-data" class="space-y-6" onsubmit="showLoading()">
+    <?php echo bofSecurityCsrfField(); ?>
     <input type="hidden" name="DeptID" value="<?php echo $deptID; ?>">
 
     <div class="glass-panel p-6">

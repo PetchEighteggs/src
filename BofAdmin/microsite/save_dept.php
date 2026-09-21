@@ -7,13 +7,12 @@ session_start();
 require_once('../../configuration.php');
 require_once('../../config/ms_com.php');
 require_once('../../config/ms.class.php');
+require_once('../includes/action_security.php');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
-
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-  header("Location: index.php");
-  exit;
-}
 
 $deptID = $_POST['DeptID'] ?? 0;
 
@@ -163,7 +162,7 @@ try {
     }
     
     $logAction = ($deptID > 0 ? 'แก้ไขตั้งค่าหน่วยงาน ID: ' : 'เพิ่มหน่วยงาน ID: ') . ($deptID > 0 ? $deptID : $DB->lastInsertId());
-    $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 1, ($deptID > 0 ? $deptID : $DB->lastInsertId()));
+    $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $staffID, '', 1, ($deptID > 0 ? $deptID : $DB->lastInsertId()));
     
     echo "<script>window.location.href='view.php';</script>";
 } catch (PDOException $e) {
