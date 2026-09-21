@@ -4,10 +4,14 @@ session_start();
 require_once('../../../configuration.php');
 require_once('../../../config/ms_com.php');
 require_once('../../../config/ms.class.php');
+require_once('../../includes/action_security.php');
 $DB = mosConnectPDO();
+bofSecurityRequireAuth($DB, ['login_url' => '../../login.php']);
+bofSecurityRequireMethod(['POST']);
+bofSecurityRequireCsrf();
 $MS = new MS($DB);
 
-$action = $_REQUEST['action'] ?? '';
+$action = $_POST['action'] ?? '';
 $deptID = $_SESSION['ActiveDeptID'] ?? 0;
 
 if (empty($deptID)) {
@@ -104,7 +108,7 @@ if ($action == 'save') {
             @unlink($uploadDir . $oldImageName);
         }
         $logAction = ($execID > 0 ? 'แก้ไขผู้บริหาร ID: ' : 'เพิ่มผู้บริหาร ID: ') . ($execID > 0 ? $execID : $DB->lastInsertId());
-        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 6, ($execID > 0 ? $execID : $DB->lastInsertId()));
+        $MS->StaffLog($logAction, $_SERVER['REQUEST_URI'], $staffID, '', 6, ($execID > 0 ? $execID : $DB->lastInsertId()));
         echo "<script>window.location.href='index.php';</script>";
     } catch (PDOException $e) {
         if ($newName !== null && is_file($uploadDir . $newName)) {
@@ -114,20 +118,20 @@ if ($action == 'save') {
     }
 
 } elseif ($action == 'delete') {
-    $id = $_GET['id'] ?? 0;
+    $id = (int)($_POST['id'] ?? 0);
     if ($id > 0) {
         try {
             // Soft delete, do not unlink image since it might be used by another position/dept
             $stmt = $DB->prepare("UPDATE microsite_executives SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE ExecID=? AND DeptID=? AND COALESCE(DelData, 'N') <> 'Y'");
             $stmt->execute([$staffID, $requestIP, $staffID, $requestIP, $id, $deptID]);
-            $MS->StaffLog('ลบผู้บริหาร ID: ' . $id, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 6, $id);
+            $MS->StaffLog('ลบผู้บริหาร ID: ' . $id, $_SERVER['REQUEST_URI'], $staffID, '', 6, $id);
             echo "<script>window.location.href='index.php';</script>";
         } catch (PDOException $e) {
             echo "<script>alert('Error: " . addslashes($e->getMessage()) . "'); window.location.href='index.php';</script>";
         }
     }
 } elseif ($action == 'bulk_active' || $action == 'bulk_inactive' || $action == 'bulk_delete') {
-    $ids = $_GET['ids'] ?? '';
+    $ids = $_POST['ids'] ?? '';
     if (!empty($ids)) {
         $idArray = array_values(array_unique(array_filter(array_map('intval', explode(',', $ids)))));
         if (count($idArray) > 0) {
@@ -149,7 +153,7 @@ if ($action == 'save') {
                 $sql = "UPDATE microsite_executives SET DelData='Y', DelDataDate=NOW(), DelDataBy=?, DelDataIP=?, UpdateDate=NOW(), UpdateBy=?, UpdateIP=? WHERE ExecID IN ($placeholders) AND DeptID = ? AND COALESCE(DelData, 'N') <> 'Y'";
                 $stmt = $DB->prepare($sql);
                 $stmt->execute($params);
-                $MS->StaffLog('ลบผู้บริหาร Bulk ID: ' . $ids, $_SERVER['REQUEST_URI'], $_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 1, '', 6, 0);
+                $MS->StaffLog('ลบผู้บริหาร Bulk ID: ' . $ids, $_SERVER['REQUEST_URI'], $staffID, '', 6, 0);
             }
         }
     }
