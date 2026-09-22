@@ -128,9 +128,13 @@ try {
         <span class="text-sm font-medium text-gray-700">จัดการรายการที่เลือก:</span>
         <select id="bulkActionSelect" class="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500 bg-white h-[42px] min-w-[200px]">
             <option value="">-- เลือกการจัดการ --</option>
+            <?php if ($userPermissions['edit']): ?>
             <option value="active">เปิดใช้งาน</option>
             <option value="inactive">ปิดใช้งาน</option>
+            <?php endif; ?>
+            <?php if ($userPermissions['delete']): ?>
             <option value="delete">ลบข้อมูล</option>
+            <?php endif; ?>
         </select>
         <button type="button" onclick="executeBulkAction()" class="btn-primary px-6 h-[42px] text-sm font-medium flex items-center justify-center">นำไปใช้</button>
         <span class="text-sm text-gray-500 ml-2" id="bulkCountText"></span>

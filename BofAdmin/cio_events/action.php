@@ -14,6 +14,34 @@ $MS = new MS($DB);
 $StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 $action = $_POST['action'] ?? '';
 
+$permissionByAction = [
+    'add' => 'CanAdd',
+    'edit' => 'CanEdit',
+    'delete' => 'CanDelete',
+    'bulk_delete' => 'CanDelete',
+    'bulk_active' => 'CanEdit',
+    'bulk_inactive' => 'CanEdit',
+];
+if (!isset($permissionByAction[$action])) {
+    bofSecurityAbort(400, 'Invalid action');
+}
+
+// Monitor first; enable enforcement after verifying the SectionURL and Staff roles.
+$hasSectionPermission = bofSecurityHasSectionPermission(
+    $DB,
+    'cio_events/index.php',
+    $permissionByAction[$action]
+);
+if (($_SESSION['GroupID'] ?? '') === 'S' && !empty($_SESSION['ActiveDeptID'])) {
+    $hasSectionPermission = false;
+}
+if (!$hasSectionPermission) {
+    bofSecurityLogFailure('cio_events_permission_denied');
+    if (getenv('BOF_CIO_EVENTS_PERMISSION_ENFORCE') === '1') {
+        bofSecurityAbort(403, 'Permission denied');
+    }
+}
+
 if (in_array($action, ['add', 'edit'], true)) {
     
     $uploadDir = $sServerImgDir;
