@@ -363,6 +363,7 @@ function bofSecurityHasSectionPermission(PDO $db, string $sectionUrl, string $pe
              INNER JOIN bof_section bs ON bs.SectionID = sp.SectionID
              WHERE sp.SetGroupID = ?
                AND bs.SectionURL = ?
+               AND bs.SectionShow = 'Y'
              LIMIT 1"
         );
         $stmt->execute([$setGroupId, $sectionUrl]);
