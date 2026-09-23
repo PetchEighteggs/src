@@ -1,0 +1,13 @@
+-- DBA template only. Replace all placeholders before execution.
+-- Never commit a real database username or password.
+
+CREATE USER IF NOT EXISTS '<APP_USER>'@'<APP_HOST>'
+    IDENTIFIED BY '<GENERATE_A_STRONG_UNIQUE_PASSWORD>';
+
+GRANT SELECT, INSERT, UPDATE, DELETE
+    ON `<APP_DATABASE>`.*
+    TO '<APP_USER>'@'<APP_HOST>';
+
+-- Verify the resulting grants, then configure DGR_DB_USERNAME and
+-- DGR_DB_PASSWORD in the production .env file.
+SHOW GRANTS FOR '<APP_USER>'@'<APP_HOST>';

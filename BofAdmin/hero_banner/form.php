@@ -13,20 +13,6 @@ $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $banner = [];
 
 try {
-    if (isset($DB)) {
-        // Auto-check and add PublishStart & PublishEnd columns
-        $checkCols = $DB->query("SHOW COLUMNS FROM `hero_banners` LIKE 'PublishStart'")->fetch();
-        if (!$checkCols) {
-            $DB->exec("ALTER TABLE `hero_banners` ADD COLUMN `PublishStart` DATE DEFAULT NULL");
-        }
-        $checkColsEnd = $DB->query("SHOW COLUMNS FROM `hero_banners` LIKE 'PublishEnd'")->fetch();
-        if (!$checkColsEnd) {
-            $DB->exec("ALTER TABLE `hero_banners` ADD COLUMN `PublishEnd` DATE DEFAULT NULL");
-        }
-    }
-} catch (PDOException $e) {}
-
-try {
     if (isset($DB) && $id > 0) {
         $stmt = $DB->prepare("SELECT * FROM hero_banners WHERE BannerID = ? AND DelData = 'N'");
         $stmt->execute([$id]);

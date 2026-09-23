@@ -10,32 +10,23 @@ $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 bofSecurityRequireMethod(['POST']);
 bofSecurityRequireCsrf();
+$requestedAction = $_POST['action'] ?? '';
+$permissionByAction = [
+    'delete' => 'CanDelete',
+    'bulk_delete' => 'CanDelete',
+    'bulk_active' => 'CanEdit',
+    'bulk_inactive' => 'CanEdit',
+];
+if ($requestedAction === 'save') {
+    $requiredPermission = (int)($_POST['DocID'] ?? 0) > 0 ? 'CanEdit' : 'CanAdd';
+} elseif (isset($permissionByAction[$requestedAction])) {
+    $requiredPermission = $permissionByAction[$requestedAction];
+} else {
+    bofSecurityAbort(400, 'Invalid action');
+}
+bofSecurityRequireSectionPermission($DB, 'videos/index.php', $requiredPermission);
 $MS = new MS($DB);
 $StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
-
-// Auto-check and add URLTH, URLEN & CoverImage columns if not exist
-try {
-    $checkCol = $DB->query("SHOW COLUMNS FROM `videos` LIKE 'URLTH'")->fetch();
-    if (!$checkCol) {
-        $DB->exec("ALTER TABLE `videos` ADD COLUMN `URLTH` varchar(500) DEFAULT NULL");
-    }
-    $checkColEN = $DB->query("SHOW COLUMNS FROM `videos` LIKE 'URLEN'")->fetch();
-    if (!$checkColEN) {
-        $DB->exec("ALTER TABLE `videos` ADD COLUMN `URLEN` varchar(500) DEFAULT NULL");
-    }
-    $checkCol2 = $DB->query("SHOW COLUMNS FROM `videos` LIKE 'CoverImage'")->fetch();
-    if (!$checkCol2) {
-        $DB->exec("ALTER TABLE `videos` ADD COLUMN `CoverImage` varchar(255) DEFAULT NULL");
-    }
-    // Add soft delete columns if not exist
-    $checkDel = $DB->query("SHOW COLUMNS FROM `videos` LIKE 'DelData'")->fetch();
-    if (!$checkDel) {
-        $DB->exec("ALTER TABLE `videos` ADD COLUMN `DelData` char(1) DEFAULT 'N'");
-        $DB->exec("ALTER TABLE `videos` ADD COLUMN `DelDataDate` datetime DEFAULT NULL");
-        $DB->exec("ALTER TABLE `videos` ADD COLUMN `DelDataBy` int DEFAULT NULL");
-        $DB->exec("ALTER TABLE `videos` ADD COLUMN `DelDataIP` varchar(50) DEFAULT NULL");
-    }
-} catch (PDOException $e) {}
 
 function formatToYMD($dateStr) {
     if (empty($dateStr)) return null;
@@ -142,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: index.php");
             exit;
         } catch (PDOException $e) {
-            die("Error: " . $e->getMessage());
+            die("Error: " . bofSecurityPublicErrorMessage($e));
         }
     }
     if ($action === 'delete') {
@@ -165,7 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: index.php");
             exit;
         } catch (PDOException $e) {
-            die("Error: " . $e->getMessage());
+            die("Error: " . bofSecurityPublicErrorMessage($e));
         }
     }
 } elseif ($action === 'bulk_delete') {
@@ -196,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: index.php");
             exit;
         } catch (PDOException $e) {
-            die("Error: " . $e->getMessage());
+            die("Error: " . bofSecurityPublicErrorMessage($e));
         }
     }
 } elseif (in_array($action, ['bulk_active', 'bulk_inactive'])) {
@@ -215,7 +206,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: index.php");
             exit;
         } catch (PDOException $e) {
-            die("Error: " . $e->getMessage());
+            die("Error: " . bofSecurityPublicErrorMessage($e));
         }
     }
 }

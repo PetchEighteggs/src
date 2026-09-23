@@ -10,24 +10,23 @@ $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 bofSecurityRequireMethod(['POST']);
 bofSecurityRequireCsrf();
+$requestedAction = $_POST['action'] ?? '';
+$permissionByAction = [
+    'delete' => 'CanDelete',
+    'bulk_delete' => 'CanDelete',
+    'bulk_active' => 'CanEdit',
+    'bulk_inactive' => 'CanEdit',
+];
+if ($requestedAction === 'save') {
+    $requiredPermission = (int)($_POST['DocID'] ?? 0) > 0 ? 'CanEdit' : 'CanAdd';
+} elseif (isset($permissionByAction[$requestedAction])) {
+    $requiredPermission = $permissionByAction[$requestedAction];
+} else {
+    bofSecurityAbort(400, 'Invalid action');
+}
+bofSecurityRequireSectionPermission($DB, 'qa/index.php', $requiredPermission);
 $MS = new MS($DB);
 $StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
-
-// Auto-check and add URLTH, URLEN & CoverImage columns if not exist
-try {
-    $checkCol = $DB->query("SHOW COLUMNS FROM `qa` LIKE 'URLTH'")->fetch();
-    if (!$checkCol) {
-        $DB->exec("ALTER TABLE `qa` ADD COLUMN `URLTH` varchar(500) DEFAULT NULL");
-    }
-    $checkColEN = $DB->query("SHOW COLUMNS FROM `qa` LIKE 'URLEN'")->fetch();
-    if (!$checkColEN) {
-        $DB->exec("ALTER TABLE `qa` ADD COLUMN `URLEN` varchar(500) DEFAULT NULL");
-    }
-    $checkCol2 = $DB->query("SHOW COLUMNS FROM `qa` LIKE 'CoverImage'")->fetch();
-    if (!$checkCol2) {
-        $DB->exec("ALTER TABLE `qa` ADD COLUMN `CoverImage` varchar(255) DEFAULT NULL");
-    }
-} catch (PDOException $e) {}
 
 function formatToYMD($dateStr) {
     if (empty($dateStr)) return null;
@@ -146,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: index.php");
             exit;
         } catch (PDOException $e) { 
-            die("Error: " . $e->getMessage()); 
+            die("Error: " . bofSecurityPublicErrorMessage($e)); 
         }
     }
     $adminId = $StaffID;
@@ -175,7 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header("Location: index.php");
                 exit;
             } catch (PDOException $e) {
-                die("Error: " . $e->getMessage());
+                die("Error: " . bofSecurityPublicErrorMessage($e));
             }
         }
     } elseif ($action === 'bulk_delete' || $action === 'bulk_active' || $action === 'bulk_inactive') {
@@ -214,7 +213,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header("Location: index.php");
                 exit;
             } catch (PDOException $e) {
-                die("Error: " . $e->getMessage());
+                die("Error: " . bofSecurityPublicErrorMessage($e));
             }
         }
     }

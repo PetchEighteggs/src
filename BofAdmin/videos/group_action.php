@@ -11,30 +11,21 @@ $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 bofSecurityRequireMethod(['POST']);
 bofSecurityRequireCsrf();
+$requestedAction = $_POST['action'] ?? '';
+$permissionByAction = [
+    'add' => 'CanAdd',
+    'edit' => 'CanEdit',
+    'delete' => 'CanDelete',
+    'bulk_delete' => 'CanDelete',
+    'bulk_active' => 'CanEdit',
+    'bulk_inactive' => 'CanEdit',
+];
+if (!isset($permissionByAction[$requestedAction])) {
+    bofSecurityAbort(400, 'Invalid action');
+}
+bofSecurityRequireSectionPermission($DB, 'videos/index.php', $permissionByAction[$requestedAction]);
 $MS = new MS($DB);
 $StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
-
-// Auto-check and add soft delete columns if not exist
-try {
-    $checkDel = $DB->query("SHOW COLUMNS FROM `videos_groups` LIKE 'DelData'")->fetch();
-    if (!$checkDel) {
-        $DB->exec("ALTER TABLE `videos_groups` ADD COLUMN `DelData` char(1) DEFAULT 'N'");
-        $DB->exec("ALTER TABLE `videos_groups` ADD COLUMN `DelDataDate` datetime DEFAULT NULL");
-        $DB->exec("ALTER TABLE `videos_groups` ADD COLUMN `DelDataBy` int DEFAULT NULL");
-        $DB->exec("ALTER TABLE `videos_groups` ADD COLUMN `DelDataIP` varchar(50) DEFAULT NULL");
-    }
-    $checkUpdate = $DB->query("SHOW COLUMNS FROM `videos_groups` LIKE 'UpdateDate'")->fetch();
-    if (!$checkUpdate) {
-        $DB->exec("ALTER TABLE `videos_groups` ADD COLUMN `UpdateDate` datetime DEFAULT NULL");
-        $DB->exec("ALTER TABLE `videos_groups` ADD COLUMN `UpdateBy` int DEFAULT NULL");
-        $DB->exec("ALTER TABLE `videos_groups` ADD COLUMN `UpdateIP` varchar(50) DEFAULT NULL");
-    }
-    $checkCreate = $DB->query("SHOW COLUMNS FROM `videos_groups` LIKE 'CreateBy'")->fetch();
-    if (!$checkCreate) {
-        $DB->exec("ALTER TABLE `videos_groups` ADD COLUMN `CreateBy` int DEFAULT NULL");
-        $DB->exec("ALTER TABLE `videos_groups` ADD COLUMN `CreateIP` varchar(50) DEFAULT NULL");
-    }
-} catch (PDOException $e) {}
 
 $action = mosGetParam($_POST, 'action', '');
 $id = mosGetParam($_POST, 'id', '');

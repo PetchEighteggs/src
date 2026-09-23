@@ -10,11 +10,15 @@ $DB = mosConnectPDO();
 bofSecurityRequireAuth($DB, ['login_url' => '../login.php']);
 bofSecurityRequireMethod(['POST']);
 bofSecurityRequireCsrf();
+if (($_POST['action'] ?? '') !== 'edit') {
+    bofSecurityAbort(400, 'Invalid action');
+}
+bofSecurityRequireSectionPermission($DB, 'org_pages/index.php', 'CanEdit');
 $MS = new MS($DB);
 $StaffID = (int)($_SESSION['StaffID'] ?? $_SESSION['admin_id'] ?? 0);
 
 function uploadMultipleFiles($fileArray, $pageId, $DB, $tableName, $pathCol) {
-    global $sServerDirFile, $sServerImgDir, $_Config, $StaffID;
+    global $sServerDirFile, $sServerImgDir, $_Config, $StaffID, $SetMaxSize, $SetFileSize;
     if (empty($fileArray['name'][0])) return;
     
     $imageExts = $_Config['AllowedExtensions']['Image'] ?? ['jpg', 'jpeg', 'gif', 'png', 'svg', 'webp'];
@@ -22,24 +26,30 @@ function uploadMultipleFiles($fileArray, $pageId, $DB, $tableName, $pathCol) {
     foreach ($fileArray['name'] as $key => $name) {
         if ($fileArray['error'][$key] !== UPLOAD_ERR_OK) continue;
         
-        $tmpName = $fileArray['tmp_name'][$key];
         $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+        $isImg = in_array($ext, $imageExts);
         
-        $newName = date('ymdHis') . rand(1000, 9999) . '.' . $ext;
-        
-        if (in_array($ext, $imageExts)) {
-            $destDir = rtrim($sServerImgDir, '/') . '/structure';
-        } else {
-            $destDir = rtrim($sServerDirFile, '/') . '/structure';
-        }
-        $dbPath = $newName;
-        
+        $destDir = $isImg ? rtrim($sServerImgDir, '/') . '/structure/' : rtrim($sServerDirFile, '/') . '/structure/';
         if (!is_dir($destDir)) {
             @mkdir($destDir, 0777, true);
         }
-        $destPath = $destDir . '/' . $newName;
         
-        if (move_uploaded_file($tmpName, $destPath)) {
+        $singleFile = [
+            'name' => $fileArray['name'][$key],
+            'type' => $fileArray['type'][$key],
+            'tmp_name' => $fileArray['tmp_name'][$key],
+            'error' => $fileArray['error'][$key],
+            'size' => $fileArray['size'][$key]
+        ];
+        
+        $maxSize = $isImg ? $SetMaxSize : $SetFileSize;
+        $allowed = $isImg ? $_Config['AllowedExtensions']['Image'] : $_Config['AllowedExtensions']['File'];
+        $denied = $isImg ? $_Config['DeniedExtensions']['Image'] : $_Config['DeniedExtensions']['File'];
+
+        $res = FU::uploadNewFile($singleFile, $destDir, $allowed, $denied, $maxSize, 1);
+
+        if ($res['Flag'] == 0 && !empty($res['sFileName'])) {
+            $dbPath = $res['sFileName'];
             $nameWithoutExt = pathinfo($name, PATHINFO_FILENAME);
             $stmt = $DB->prepare("INSERT INTO `{$tableName}` (`PageID`, `FileName_TH`, `FileName_EN`, `{$pathCol}`, `FileType`, `FileSize`, `CreateDate`, `CreateBy`, `CreateIP`, `DelData`) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, ?, 'N')");
             $stmt->execute([$pageId, $nameWithoutExt, $nameWithoutExt, $dbPath, $ext, $fileArray['size'][$key], $StaffID, $_SERVER['REMOTE_ADDR']]);
@@ -52,77 +62,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'edit'
     if (!$id) { header("Location: index.php"); exit; }
 
     try {
-        // Auto-create attachment table if not exists
-        $checkTable = $DB->query("SHOW TABLES LIKE 'org_pages_attachments'")->fetch();
-        if (!$checkTable) {
-            $DB->exec("CREATE TABLE `org_pages_attachments` (
-                `AttachmentID` int(11) NOT NULL AUTO_INCREMENT,
-                `PageID` int(11) NOT NULL,
-                `FileName_TH` varchar(255) DEFAULT NULL,
-                `FileName_EN` varchar(255) DEFAULT NULL,
-                `FilePath` varchar(255) NOT NULL,
-                `FileType` varchar(10) DEFAULT NULL,
-                `FileSize` int(11) DEFAULT 0,
-                `OrderNo` int(11) DEFAULT 1,
-                `DelData` enum('Y','N') DEFAULT 'N',
-                `CreateDate` datetime DEFAULT NULL,
-                `CreateBy` int(11) DEFAULT NULL,
-                `CreateIP` varchar(50) DEFAULT NULL,
-                `DelDataDate` datetime DEFAULT NULL,
-                `DelDataBy` int(11) DEFAULT NULL,
-                `DelDataIP` varchar(50) DEFAULT NULL,
-                PRIMARY KEY (`AttachmentID`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
-        }
-
-        // Auto-create timelines table if not exists
-        $checkTableTimeline = $DB->query("SHOW TABLES LIKE 'org_pages_timelines'")->fetch();
-        if (!$checkTableTimeline) {
-            $DB->exec("CREATE TABLE `org_pages_timelines` (
-                `TimelineID` int(11) NOT NULL AUTO_INCREMENT,
-                `PageID` int(11) NOT NULL,
-                `Year_TH` varchar(255) DEFAULT NULL,
-                `Year_EN` varchar(255) DEFAULT NULL,
-                `Title_TH` varchar(255) DEFAULT NULL,
-                `Title_EN` varchar(255) DEFAULT NULL,
-                `Description_TH` text DEFAULT NULL,
-                `Description_EN` text DEFAULT NULL,
-                `OrderNo` int(11) DEFAULT 1,
-                `IsHeader` enum('Y','N') DEFAULT 'N',
-                `DelData` enum('Y','N') DEFAULT 'N',
-                `CreateDate` datetime DEFAULT NULL,
-                `CreateBy` int(11) DEFAULT NULL,
-                `CreateIP` varchar(50) DEFAULT NULL,
-                `UpdateDate` datetime DEFAULT NULL,
-                `UpdateBy` int(11) DEFAULT NULL,
-                `UpdateIP` varchar(50) DEFAULT NULL,
-                `DelDataDate` datetime DEFAULT NULL,
-                `DelDataBy` int(11) DEFAULT NULL,
-                `DelDataIP` varchar(50) DEFAULT NULL,
-                PRIMARY KEY (`TimelineID`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
-        } else {
-            $checkColsTimeline = $DB->query("SHOW COLUMNS FROM `org_pages_timelines`")->fetchAll(PDO::FETCH_COLUMN);
-            if (!in_array('IsHeader', $checkColsTimeline)) {
-                $DB->exec("ALTER TABLE `org_pages_timelines` ADD COLUMN `IsHeader` enum('Y','N') DEFAULT 'N' AFTER `OrderNo`");
-            }
-        }
-
-        // Ensure columns exist in org_pages
-        $checkCols = $DB->query("SHOW COLUMNS FROM `org_pages`")->fetchAll(PDO::FETCH_COLUMN);
-        if (!in_array('CanFile', $checkCols)) {
-            $DB->exec("ALTER TABLE `org_pages` ADD COLUMN `CanFile` enum('Y','N') DEFAULT 'Y'");
-        }
-        if (!in_array('HasFile', $checkCols)) {
-            $DB->exec("ALTER TABLE `org_pages` ADD COLUMN `HasFile` enum('Y','N') DEFAULT 'N'");
-        }
-        if (!in_array('CanTimeline', $checkCols)) {
-            $DB->exec("ALTER TABLE `org_pages` ADD COLUMN `CanTimeline` enum('Y','N') DEFAULT 'Y'");
-        }
-        if (!in_array('HasTimeline', $checkCols)) {
-            $DB->exec("ALTER TABLE `org_pages` ADD COLUMN `HasTimeline` enum('Y','N') DEFAULT 'N'");
-        }
-
         $stmt = $DB->prepare("UPDATE org_pages SET
             Content_TH = ?,
             Content_EN = ?,
@@ -229,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'edit'
         header("Location: index.php");
         exit;
     } catch (PDOException $e) {
-        die("Error: " . $e->getMessage());
+        die("Error: " . bofSecurityPublicErrorMessage($e));
     }
 }
 

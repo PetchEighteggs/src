@@ -46,16 +46,6 @@ if ($id > 0) {
     } catch (PDOException $e) {}
 }
 
-// Auto-check DelData in videos_groups
-try {
-    if(isset($DB)) {
-        $checkDel = $DB->query("SHOW COLUMNS FROM `videos_groups` LIKE 'DelData'")->fetch();
-        if (!$checkDel) {
-            $DB->exec("ALTER TABLE `videos_groups` ADD COLUMN `DelData` char(1) DEFAULT 'N'");
-        }
-    }
-} catch(PDOException $e) {}
-
 // Fetch Groups
 $groups = [];
 try {

@@ -48,16 +48,6 @@ if ($id > 0) {
 
 $contentType = $data['ContentType'] ?? ((!empty($data['URLTH']) || !empty($data['URLEN'])) ? 'url' : ($id > 0 ? 'detail' : 'url'));
 
-// Auto-check DelData in weblinks_groups
-try {
-    if(isset($DB)) {
-        $checkDel = $DB->query("SHOW COLUMNS FROM `weblinks_groups` LIKE 'DelData'")->fetch();
-        if (!$checkDel) {
-            $DB->exec("ALTER TABLE `weblinks_groups` ADD COLUMN `DelData` char(1) DEFAULT 'N'");
-        }
-    }
-} catch(PDOException $e) {}
-
 // Fetch Groups
 $groups = [];
 try {
