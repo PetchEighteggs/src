@@ -15,8 +15,6 @@
 /.env
 /.env.*
 !/.env.example
-/configuration.php
-/config/func.class.php
 /reset_pass.php
 /show_passwords.php
 /intranet-server/local.php

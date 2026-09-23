@@ -1,9 +1,11 @@
 {
     "name": "dgrweb/app",
     "description": "DGR Web App",
+    "license": "proprietary",
     "require": {
         "rosell-dk/webp-convert": "^2.9",
         "phpmailer/phpmailer": "^7.1",
-        "phpoffice/phpspreadsheet": "^5.9"
+        "phpoffice/phpspreadsheet": "^5.9",
+        "vlucas/phpdotenv": "^5.7"
     }
 }

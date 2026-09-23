@@ -1,0 +1,7 @@
+# Never expose environment files through the web server.
+<FilesMatch "^\.env(?:\..*)?$">
+    Require all denied
+</FilesMatch>
+
+# Disable directory listings at the application root.
+Options -Indexes
